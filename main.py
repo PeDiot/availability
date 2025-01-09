@@ -4,7 +4,7 @@ sys.path.append("../")
 
 from typing import Dict, List
 
-import argparse, tqdm, json, os
+import tqdm, json, os
 from datetime import datetime
 from vinted import Vinted
 from pinecone import Pinecone
@@ -14,18 +14,8 @@ import src.vinted as src
 
 SECRETS_PATH = "../secrets/secrets.json"
 UPDATE_EVERY = 100
-
-
-def parse_args() -> Dict:
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--n_items", "-n", type=int, default=1000, help="Number of items to process"
-    )
-    parser.add_argument(
-        "--domain", "-d", type=str, default="fr", help="Domain to use for the catalog"
-    )
-
-    return vars(parser.parse_args())
+NUM_ITEMS = 1e4
+DOMAIN = "fr"
 
 
 def update(unavailable_items: List[str]) -> bool:
@@ -70,7 +60,7 @@ def update(unavailable_items: List[str]) -> bool:
     return bq_update and pinecone_update
 
 
-def main(n_items: int, domain: str = "fr"):
+def main():
     secrets = json.loads(os.getenv("SECRETS_JSON"))
 
     global bq_client
@@ -82,7 +72,7 @@ def main(n_items: int, domain: str = "fr"):
     pinecone_client = Pinecone(api_key=secrets.get("PINECONE_API_KEY"))
     pinecone_index = pinecone_client.Index(src.enums.PINECONE_INDEX_NAME)
 
-    vinted_client = Vinted(domain=domain)
+    vinted_client = Vinted(domain=DOMAIN)
 
     loader = src.bigquery.load_table(
         client=bq_client,
@@ -90,7 +80,7 @@ def main(n_items: int, domain: str = "fr"):
         dataset_id=src.enums.DATASET_ID,
         conditions=["is_available = true"],
         order_by="updated_at",
-        limit=n_items,
+        limit=NUM_ITEMS,
         to_list=False,
     )
 
@@ -135,5 +125,4 @@ def main(n_items: int, domain: str = "fr"):
 
 
 if __name__ == "__main__":
-    kwargs = parse_args()
-    main(**kwargs)
+    main()
