@@ -28,11 +28,8 @@ def parse_args() -> Dict:
     return vars(parser.parse_args())
 
 
-
-def update(unavailable_items: List[str]) -> bool: 
-    unavailable_items_str = ", ".join(
-        [f"'{item}'" for item in unavailable_items]
-    )
+def update(unavailable_items: List[str]) -> bool:
+    unavailable_items_str = ", ".join([f"'{item}'" for item in unavailable_items])
 
     src.bigquery.update_table(
         client=bq_client,
@@ -49,12 +46,12 @@ def update(unavailable_items: List[str]) -> bool:
         table_id=src.enums.PINECONE_TABLE_ID,
         conditions=[f"item_id in ({unavailable_items_str})"],
         fields=["point_id"],
-        to_list=True
-    )   
+        to_list=True,
+    )
 
     pinecone_point_ids = [point["point_id"] for point in pinecone_points]
 
-    try: 
+    try:
         pinecone_index.delete(ids=pinecone_point_ids)
         pinecone_update = True
     except Exception as e:
@@ -84,7 +81,7 @@ def main(n_items: int, domain: str = "fr"):
     global pinecone_index
     pinecone_client = Pinecone(api_key=secrets.get("PINECONE_API_KEY"))
     pinecone_index = pinecone_client.Index(src.enums.PINECONE_INDEX_NAME)
-    
+
     vinted_client = Vinted(domain=domain)
 
     loader = src.bigquery.load_table(
@@ -134,7 +131,7 @@ def main(n_items: int, domain: str = "fr"):
         f"Processed: {n} | "
         f"Unavailable: {len(unavailable_items)}"
     )
-    
+
 
 if __name__ == "__main__":
     kwargs = parse_args()
