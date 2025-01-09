@@ -88,6 +88,7 @@ def main(n_items: int, domain: str = "fr"):
         client=bq_client,
         table_id=src.enums.ITEM_TABLE_ID,
         dataset_id=src.enums.DATASET_ID,
+        conditions=["is_available = true"],
         order_by="updated_at",
         limit=n_items,
         to_list=False,
