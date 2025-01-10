@@ -1,1 +1,1 @@
-from . import bigquery, enums
+from . import bigquery, enums, pinecone

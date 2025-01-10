@@ -2,4 +2,4 @@ vinted-api-wrapper==0.3.0
 google-cloud-bigquery==3.27.0
 google-auth==2.37.0
 tqdm==4.67.1
-pinecone-client==2.2.4 
+pinecone-client==5.0.1

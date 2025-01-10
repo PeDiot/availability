@@ -2,19 +2,18 @@ import sys
 
 sys.path.append("../")
 
-from typing import Dict, List
+from typing import List
 
 import tqdm, json, os
 from datetime import datetime
 from vinted import Vinted
 from pinecone import Pinecone
 
-import src.vinted as src
-
+import src
 
 SECRETS_PATH = "../secrets/secrets.json"
-UPDATE_EVERY = 100
-NUM_ITEMS = 1e4
+UPDATE_EVERY = 10
+NUM_ITEMS = int(1e2)
 DOMAIN = "fr"
 
 
@@ -41,23 +40,15 @@ def update(unavailable_items: List[str]) -> bool:
 
     pinecone_point_ids = [point["point_id"] for point in pinecone_points]
 
-    try:
-        pinecone_index.delete(ids=pinecone_point_ids)
-        pinecone_update = True
-    except Exception as e:
-        print(e)
-        bq_update = False
-        pinecone_update = False
-
-    if pinecone_update:
-        bq_update = src.bigquery.delete_from_table(
+    if src.pinecone.delete_points(pinecone_index, pinecone_point_ids):
+        return src.bigquery.delete_from_table(
             client=bq_client,
             dataset_id=src.enums.DATASET_ID,
             table_id=src.enums.PINECONE_TABLE_ID,
             conditions=[f"item_id in ({unavailable_items_str})"],
         )
 
-    return bq_update and pinecone_update
+    return False
 
 
 def main():
@@ -84,7 +75,7 @@ def main():
         to_list=False,
     )
 
-    unavailable_items, n, n_success = [], 0, 0
+    unavailable_items, n, n_unavailable, n_updated = [], 0, 0, 0
     loop = tqdm.tqdm(iterable=loader, total=loader.total_rows)
 
     for row in loop:
@@ -95,32 +86,29 @@ def main():
 
             if not info.item.can_be_sold:
                 unavailable_items.append(str(row.id))
+                n_unavailable += 1
 
         except Exception as e:
             pass
 
-        if n % UPDATE_EVERY == 0:
+        if n % UPDATE_EVERY == 0 and len(unavailable_items) > 0:
             if update(unavailable_items):
-                n_success += len(unavailable_items)
+                n_updated += len(unavailable_items)
 
             unavailable_items = []
 
         loop.set_description(
-            f"Success rate: {n_success / n:.2f} | "
-            f"Updated: {n_success} | "
+            f"Unavailable: {n_unavailable} | "
             f"Processed: {n} | "
-            f"Unavailable: {len(unavailable_items)}"
+            f"Updated: {n_updated}"
         )
 
     if unavailable_items:
         if update(unavailable_items):
-            n_success += len(unavailable_items)
+            n_updated += len(unavailable_items)
 
     loop.set_description(
-        f"Success rate: {n_success / n:.2f} | "
-        f"Updated: {n_success} | "
-        f"Processed: {n} | "
-        f"Unavailable: {len(unavailable_items)}"
+        f"Unavailable: {n_unavailable} | " f"Processed: {n} | " f"Updated: {n_updated}"
     )
 
 
