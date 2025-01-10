@@ -11,9 +11,8 @@ from pinecone import Pinecone
 
 import src
 
-SECRETS_PATH = "../secrets/secrets.json"
-UPDATE_EVERY = 10
-NUM_ITEMS = int(1e2)
+UPDATE_EVERY = 100
+NUM_ITEMS = 10000
 DOMAIN = "fr"
 
 
