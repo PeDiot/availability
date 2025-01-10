@@ -1,0 +1,43 @@
+name: Item availability check.
+
+on:
+  workflow_dispatch:
+#   schedule:
+#     - cron: '0 * * * *'
+
+jobs:
+  build-and-run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker Image
+        run: docker build -t availability .
+
+      - name: Run Docker Container with Retry
+        env:
+          SECRETS_JSON: ${{ secrets.SECRETS_JSON }}
+        run: |
+          retries=10
+          delay=10
+          attempt=0
+
+          until [ $attempt -ge $retries ]; do
+              echo "Attempt $((attempt+1)) of $retries..."
+              if docker run -e SECRETS_JSON availability; then
+                  echo "Step succeeded on attempt $((attempt+1))"
+                  exit 0
+              else
+                  echo "Step failed on attempt $((attempt+1)). Retrying in $delay seconds..."
+                  attempt=$((attempt+1))
+                  sleep $delay
+              fi
+          done
+
+          echo "All retry attempts failed."
+          exit 1
