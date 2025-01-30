@@ -74,7 +74,7 @@ def main():
         to_list=False,
     )
 
-    unavailable_items, n, n_unavailable, n_updated = [], 0, 0, 0
+    unavailable_items, n, n_success, n_unavailable, n_updated = [], 0, 0, 0, 0
     loop = tqdm.tqdm(iterable=loader, total=loader.total_rows)
 
     for row in loop:
@@ -82,7 +82,7 @@ def main():
 
         try:
             info = vinted_client.item_info(row.vinted_id)
-
+            n_success += 1
             if not info.item.can_be_sold:
                 unavailable_items.append(str(row.id))
                 n_unavailable += 1
@@ -97,8 +97,10 @@ def main():
             unavailable_items = []
 
         loop.set_description(
-            f"Unavailable: {n_unavailable} | "
             f"Processed: {n} | "
+            f"Success: {n_success} | "
+            f"Success rate: {n_success / n:.2f} | "
+            f"Unavailable: {n_unavailable} | "
             f"Updated: {n_updated}"
         )
 
