@@ -11,6 +11,7 @@ from pinecone import Pinecone
 
 import src
 
+
 UPDATE_EVERY = 100
 NUM_ITEMS = 10000
 DOMAIN = "fr"
@@ -81,9 +82,11 @@ def main():
         n += 1
 
         try:
-            info = vinted_client.item_info(row.vinted_id)
+            item_id = int(row.vinted_id)
+            is_item_available = src.status.is_available(vinted_client, item_id, row.url)
             n_success += 1
-            if not info.item.can_be_sold:
+            
+            if is_item_available is False:
                 unavailable_items.append(str(row.id))
                 n_unavailable += 1
 
