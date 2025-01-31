@@ -29,7 +29,7 @@ def is_available(client: Vinted, item_id: int, item_url: str) -> bool | None:
 def _get_item_status_from_api(client: Vinted, item_id: int) -> ItemStatus:
     try:
         info = client.item_info(item_id)
-        return ItemStatus.AVAILABLE if not info.item.can_be_sold else ItemStatus.SOLD
+        return ItemStatus.AVAILABLE if info.item.can_be_sold else ItemStatus.SOLD
     
     except Exception as e:
         return ItemStatus.UNKNOWN
