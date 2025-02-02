@@ -12,40 +12,52 @@ from pinecone import Pinecone
 import src
 
 
-UPDATE_EVERY = 50
-NUM_ITEMS = 6500
+UPDATE_EVERY = 100
+NUM_ITEMS = 10000
 DOMAIN = "fr"
 
 
-def update(unavailable_items: List[str]) -> bool:
+def update(available_items: List[str], unavailable_items: List[str]) -> bool:
     unavailable_items_str = ", ".join([f"'{item}'" for item in unavailable_items])
+    available_items_str = ", ".join([f"'{item}'" for item in available_items])
 
-    src.bigquery.update_table(
-        client=bq_client,
-        dataset_id=src.enums.DATASET_ID,
-        table_id=src.enums.ITEM_TABLE_ID,
-        fields=["is_available", "updated_at"],
-        new_values=[False, f"'{datetime.now().isoformat()}'"],
-        conditions=[f"id IN ({unavailable_items_str})"],
+    iterator = zip(
+        [unavailable_items_str, available_items_str],
+        [False, True],
     )
 
-    pinecone_points = src.bigquery.load_table(
-        client=bq_client,
-        table=f"`{src.enums.DATASET_ID}.{src.enums.PINECONE_TABLE_ID}`",
-        conditions=[f"item_id in ({unavailable_items_str})"],
-        fields=["point_id"],
-        to_list=True,
-    )
+    update_success = dict()
 
-    pinecone_point_ids = [point["point_id"] for point in pinecone_points]
-
-    if src.pinecone.delete_points(pinecone_index, pinecone_point_ids):
-        return src.bigquery.delete_from_table(
+    for item_ids_str, is_available in iterator:
+        success = src.bigquery.update_table(
             client=bq_client,
             dataset_id=src.enums.DATASET_ID,
-            table_id=src.enums.PINECONE_TABLE_ID,
-            conditions=[f"item_id in ({unavailable_items_str})"],
+            table_id=src.enums.ITEM_TABLE_ID,
+            fields=["is_available", "updated_at"],
+            new_values=[is_available, f"'{datetime.now().isoformat()}'"],
+            conditions=[f"id IN ({item_ids_str})"],
         )
+
+        update_success[is_available] = success
+
+    if update_success.get(False):
+        pinecone_points = src.bigquery.load_table(
+            client=bq_client,
+            table=f"`{src.enums.DATASET_ID}.{src.enums.PINECONE_TABLE_ID}`",
+            conditions=[f"item_id in ({unavailable_items_str})"],
+            fields=["point_id"],
+            to_list=True,
+        )
+
+        pinecone_point_ids = [point["point_id"] for point in pinecone_points]
+
+        if src.pinecone.delete_points(pinecone_index, pinecone_point_ids):
+            return src.bigquery.delete_from_table(
+                client=bq_client,
+                dataset_id=src.enums.DATASET_ID,
+                table_id=src.enums.PINECONE_TABLE_ID,
+                conditions=[f"item_id in ({unavailable_items_str})"],
+            )
 
     return False
 
@@ -71,19 +83,22 @@ def main():
         f"MOD(FARM_FINGERPRINT(CAST({src.enums.VINTED_ID_FIELD} AS STRING)), {total_shards}) = {shard_id}",
     ]
 
+    order_by_clauses = [
+        src.bigquery.OrderBy(field="updated_at", ascending=True),
+        src.bigquery.OrderBy(field="num_likes", ascending=False),
+    ]
+
     loader = src.bigquery.load_table(
         client=bq_client,
         table=src.bigquery.ITEMS_AND_LIKES_QUERY,
         conditions=query_conditions,
-        order_by=[
-            src.bigquery.OrderBy(field="updated_at", ascending=True),
-            src.bigquery.OrderBy(field="num_likes", ascending=False),
-        ],
+        order_by=order_by_clauses,
         limit=NUM_ITEMS,
         to_list=False,
     )
 
-    unavailable_items, n, n_success, n_unavailable, n_updated = [], 0, 0, 0, 0
+    available_items, unavailable_items = [], []
+    n, n_success, n_unavailable, n_updated = 0, 0, 0, 0
     loop = tqdm.tqdm(iterable=loader, total=loader.total_rows)
 
     for row in loop:
@@ -91,29 +106,29 @@ def main():
 
         try:
             item_id = int(row.vinted_id)
-            is_item_available = src.status.is_available(
-                client=vinted_client, 
-                item_id=item_id, 
-                item_url=row.url
+            is_available = src.status.is_available(
+                client=vinted_client, item_id=item_id, item_url=row.url
             )
 
-            if is_item_available is None:
+            if is_available is None:
                 continue
 
             n_success += 1
 
-            if is_item_available is False:
+            if is_available is False:
                 unavailable_items.append(str(row.id))
                 n_unavailable += 1
+            else:
+                available_items.append(str(row.id))
 
         except Exception as e:
             pass
 
         if n % UPDATE_EVERY == 0 and len(unavailable_items) > 0:
-            if update(unavailable_items):
-                n_updated += len(unavailable_items)
+            if update(available_items, unavailable_items):
+                n_updated += len(unavailable_items) + len(available_items)
 
-            unavailable_items = []
+            available_items, unavailable_items = [], []
 
         loop.set_description(
             f"Processed: {n} | "
@@ -124,8 +139,8 @@ def main():
         )
 
     if unavailable_items:
-        if update(unavailable_items):
-            n_updated += len(unavailable_items)
+        if update(available_items, unavailable_items):
+            n_updated += len(unavailable_items) + len(available_items)
 
     loop.set_description(
         f"Unavailable: {n_unavailable} | " f"Processed: {n} | " f"Updated: {n_updated}"
