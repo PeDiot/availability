@@ -67,10 +67,12 @@ def main():
 
     loader = src.bigquery.load_table(
         client=bq_client,
-        table_id=src.enums.ITEM_TABLE_ID,
-        dataset_id=src.enums.DATASET_ID,
+        table=src.bigquery.ITEMS_AND_LIKES_QUERY,
         conditions=["is_available = true"],
-        order_by="updated_at",
+        order_by=[
+            src.bigquery.OrderBy(field="updated_at", ascending=True), 
+            src.bigquery.OrderBy(field="num_likes", ascending=False),
+        ],
         limit=NUM_ITEMS,
         to_list=False,
     )

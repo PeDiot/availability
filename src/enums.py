@@ -1,6 +1,7 @@
 PROJECT_ID = "carlia"
 DATASET_ID = "vinted"
 ITEM_TABLE_ID = "item"
+LIKES_TABLE_ID = "likes"
 PINECONE_TABLE_ID = "pinecone"
 
 PINECONE_INDEX_NAME = "items"
