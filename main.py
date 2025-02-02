@@ -18,33 +18,30 @@ DOMAIN = "fr"
 
 
 def update(available_items: List[str], unavailable_items: List[str]) -> bool:
-    unavailable_items_str = ", ".join([f"'{item}'" for item in unavailable_items])
-    available_items_str = ", ".join([f"'{item}'" for item in available_items])
+    iterator = zip([unavailable_items, available_items], [False, True])
 
-    iterator = zip(
-        [unavailable_items_str, available_items_str],
-        [False, True]
-    )
+    item_ids_str, update_success = dict(), dict()
 
-    update_success = dict()
+    for item_ids, is_available in iterator:
+        if item_ids:
+            item_ids_str[is_available] = ", ".join([f"'{item}'" for item in item_ids])
 
-    for item_ids_str, is_available in iterator:
-        success = src.bigquery.update_table(
-            client=bq_client,
-            dataset_id=src.enums.DATASET_ID,
-            table_id=src.enums.ITEM_TABLE_ID,
-            fields=["is_available", "updated_at"],
-            new_values=[is_available, f"'{datetime.now().isoformat()}'"],
-            conditions=[f"id IN ({item_ids_str})"],
-        )
+            success = src.bigquery.update_table(
+                client=bq_client,
+                dataset_id=src.enums.DATASET_ID,
+                table_id=src.enums.ITEM_TABLE_ID,
+                fields=["is_available", "updated_at"],
+                new_values=[is_available, f"'{datetime.now().isoformat()}'"],
+                conditions=[f"id IN ({item_ids_str[is_available]})"],
+            )
 
-        update_success[is_available] = success
+            update_success[is_available] = success
 
     if update_success.get(False):
         pinecone_points = src.bigquery.load_table(
             client=bq_client,
             table=f"`{src.enums.DATASET_ID}.{src.enums.PINECONE_TABLE_ID}`",
-            conditions=[f"item_id in ({unavailable_items_str})"],
+            conditions=[f"item_id in ({item_ids_str[False]})"],
             fields=["point_id"],
             to_list=True,
         )
@@ -56,7 +53,7 @@ def update(available_items: List[str], unavailable_items: List[str]) -> bool:
                 client=bq_client,
                 dataset_id=src.enums.DATASET_ID,
                 table_id=src.enums.PINECONE_TABLE_ID,
-                conditions=[f"item_id in ({unavailable_items_str})"],
+                conditions=[f"item_id in ({item_ids_str[False]})"],
             )
 
     return False
@@ -124,7 +121,7 @@ def main():
         except Exception as e:
             pass
 
-        if n % UPDATE_EVERY == 0 and len(unavailable_items) > 0:
+        if n % UPDATE_EVERY == 0 and (unavailable_items or available_items):
             if update(available_items, unavailable_items):
                 n_updated += len(unavailable_items) + len(available_items)
 
@@ -138,7 +135,7 @@ def main():
             f"Updated: {n_updated}"
         )
 
-    if unavailable_items:
+    if unavailable_items or available_items:
         if update(available_items, unavailable_items):
             n_updated += len(unavailable_items) + len(available_items)
 
