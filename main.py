@@ -56,7 +56,7 @@ def update(available_items: List[str], unavailable_items: List[str]) -> bool:
                 conditions=[f"item_id in ({item_ids_str[False]})"],
             )
 
-    return False
+    return update_success.get(True)
 
 
 def main():
@@ -95,16 +95,17 @@ def main():
     )
 
     available_items, unavailable_items = [], []
-    n, n_success, n_unavailable, n_updated = 0, 0, 0, 0
+    n, n_success, n_available, n_unavailable, n_updated = 0, 0, 0, 0, 0
     loop = tqdm.tqdm(iterable=loader, total=loader.total_rows)
 
     for row in loop:
         n += 1
 
         try:
-            item_id = int(row.vinted_id)
             is_available = src.status.is_available(
-                client=vinted_client, item_id=item_id, item_url=row.url
+                client=vinted_client, 
+                item_id=int(row.vinted_id),
+                item_url=row.url
             )
 
             if is_available is None:
@@ -113,10 +114,11 @@ def main():
             n_success += 1
 
             if is_available is False:
-                unavailable_items.append(str(row.id))
+                unavailable_items.append(row.id)
                 n_unavailable += 1
             else:
-                available_items.append(str(row.id))
+                n_available += 1
+                available_items.append(row.id)
 
         except Exception as e:
             pass
@@ -131,6 +133,7 @@ def main():
             f"Processed: {n} | "
             f"Success: {n_success} | "
             f"Success rate: {n_success / n:.2f} | "
+            f"Available: {n_available} | "
             f"Unavailable: {n_unavailable} | "
             f"Updated: {n_updated}"
         )
@@ -139,9 +142,14 @@ def main():
         if update(available_items, unavailable_items):
             n_updated += len(unavailable_items) + len(available_items)
 
-    loop.set_description(
-        f"Unavailable: {n_unavailable} | " f"Processed: {n} | " f"Updated: {n_updated}"
-    )
+        loop.set_description(
+            f"Processed: {n} | "
+            f"Success: {n_success} | "
+            f"Success rate: {n_success / n:.2f} | "
+            f"Available: {n_available} | "
+            f"Unavailable: {n_unavailable} | "
+            f"Updated: {n_updated}"
+        )
 
 
 if __name__ == "__main__":
