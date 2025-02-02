@@ -22,7 +22,7 @@ def is_available(client: Vinted, item_id: int, item_url: str) -> bool | None:
 
         if item_status == ItemStatus.AVAILABLE:
             return True
-        elif item_status == ItemStatus.SOLD:
+        elif item_status in [ItemStatus.SOLD, ItemStatus.NOT_FOUND]:
             return False
         else:
             return

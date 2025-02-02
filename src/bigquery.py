@@ -59,8 +59,6 @@ def load_table(
     if limit:
         query += f" LIMIT {limit}"
 
-    print(query)
-
     query_job = client.query(query)
     results = query_job.result()
 
