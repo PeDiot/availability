@@ -23,7 +23,7 @@ def update(available_items: List[str], unavailable_items: List[str]) -> bool:
 
     iterator = zip(
         [unavailable_items_str, available_items_str],
-        [False, True],
+        [False, True]
     )
 
     update_success = dict()
