@@ -31,8 +31,7 @@ def update(unavailable_items: List[str]) -> bool:
 
     pinecone_points = src.bigquery.load_table(
         client=bq_client,
-        dataset_id=src.enums.DATASET_ID,
-        table_id=src.enums.PINECONE_TABLE_ID,
+        table=f"`{src.enums.DATASET_ID}.{src.enums.PINECONE_TABLE_ID}`",
         conditions=[f"item_id in ({unavailable_items_str})"],
         fields=["point_id"],
         to_list=True,
