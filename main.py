@@ -5,15 +5,16 @@ sys.path.append("../")
 from typing import List
 
 import tqdm, json, os
+import backoff, requests
 from datetime import datetime
-from vinted import Vinted
+from vinted import Vinted, RateLimitException
 from pinecone import Pinecone
 
 import src
 
 
-UPDATE_EVERY = 100
-NUM_ITEMS = 10000
+UPDATE_EVERY = 50
+NUM_ITEMS = 6500
 DOMAIN = "fr"
 
 
@@ -53,6 +54,8 @@ def update(unavailable_items: List[str]) -> bool:
 
 def main():
     secrets = json.loads(os.getenv("SECRETS_JSON"))
+    shard_id = int(os.getenv("SHARD_ID", "0"))
+    total_shards = int(os.getenv("TOTAL_SHARDS", "1"))
 
     global bq_client
     gcp_credentials = secrets.get("GCP_CREDENTIALS")
@@ -65,10 +68,15 @@ def main():
 
     vinted_client = Vinted(domain=DOMAIN)
 
+    query_conditions = [
+        f"{src.enums.AVAILABLE_FIELD} = true",
+        f"MOD(FARM_FINGERPRINT(CAST({src.enums.VINTED_ID_FIELD} AS STRING)), {total_shards}) = {shard_id}"
+    ]
+
     loader = src.bigquery.load_table(
         client=bq_client,
         table=src.bigquery.ITEMS_AND_LIKES_QUERY,
-        conditions=["is_available = true"],
+        conditions=query_conditions,
         order_by=[
             src.bigquery.OrderBy(field="updated_at", ascending=True), 
             src.bigquery.OrderBy(field="num_likes", ascending=False),
@@ -85,7 +93,7 @@ def main():
 
         try:
             item_id = int(row.vinted_id)
-            is_item_available = src.status.is_available(vinted_client, item_id, row.url)
+            is_item_available = src.status.is_available(item_id, row.url)
             n_success += 1
             
             if is_item_available is False:

@@ -1,4 +1,4 @@
-name: Item availability check.
+name: Item availability check
 
 on:
   workflow_dispatch:
@@ -6,9 +6,13 @@ on:
     - cron: '*/30 * * * *'
 
 jobs:
-  build-and-run:
+  availability-check:
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5]  
+      fail-fast: false
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -19,25 +23,9 @@ jobs:
       - name: Build Docker Image
         run: docker build -t availability .
 
-      - name: Run Docker Container with Retry
+      - name: Run Docker Container
         env:
           SECRETS_JSON: ${{ secrets.SECRETS_JSON }}
-        run: |
-          retries=10
-          delay=10
-          attempt=0
-
-          until [ $attempt -ge $retries ]; do
-              echo "Attempt $((attempt+1)) of $retries..."
-              if docker run -e SECRETS_JSON availability; then
-                  echo "Step succeeded on attempt $((attempt+1))"
-                  exit 0
-              else
-                  echo "Step failed on attempt $((attempt+1)). Retrying in $delay seconds..."
-                  attempt=$((attempt+1))
-                  sleep $delay
-              fi
-          done
-
-          echo "All retry attempts failed."
-          exit 1
+          SHARD_ID: ${{ matrix.shard }}
+          TOTAL_SHARDS: 4
+        run: docker run -e SECRETS_JSON -e SHARD_ID -e TOTAL_SHARDS availability

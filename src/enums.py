@@ -3,6 +3,8 @@ DATASET_ID = "vinted"
 ITEM_TABLE_ID = "item"
 LIKES_TABLE_ID = "likes"
 PINECONE_TABLE_ID = "pinecone"
+VINTED_ID_FIELD = "vinted_id"
+AVAILABLE_FIELD = "is_available"
 
 PINECONE_INDEX_NAME = "items"
 
