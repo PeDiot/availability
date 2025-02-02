@@ -68,7 +68,7 @@ def load_table(
         return [dict(row) for row in results]
     else:
         return results
-    
+
 
 def update_table(
     client: bigquery.Client,
