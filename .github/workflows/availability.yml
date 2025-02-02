@@ -27,5 +27,5 @@ jobs:
         env:
           SECRETS_JSON: ${{ secrets.SECRETS_JSON }}
           SHARD_ID: ${{ matrix.shard }}
-          TOTAL_SHARDS: 4
+          TOTAL_SHARDS: 6
         run: docker run -e SECRETS_JSON -e SHARD_ID -e TOTAL_SHARDS availability

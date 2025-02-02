@@ -5,9 +5,8 @@ sys.path.append("../")
 from typing import List
 
 import tqdm, json, os
-import backoff, requests
 from datetime import datetime
-from vinted import Vinted, RateLimitException
+from vinted import Vinted
 from pinecone import Pinecone
 
 import src
