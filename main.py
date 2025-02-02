@@ -93,7 +93,15 @@ def main():
 
         try:
             item_id = int(row.vinted_id)
-            is_item_available = src.status.is_available(item_id, row.url)
+            is_item_available = src.status.is_available(
+                client=vinted_client,
+                item_id=item_id,
+                url=row.url
+            )
+
+            if is_item_available is None:
+                continue
+
             n_success += 1
             
             if is_item_available is False:

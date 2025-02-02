@@ -20,10 +20,12 @@ def is_available(client: Vinted, item_id: int, item_url: str) -> bool | None:
     if item_status == ItemStatus.UNKNOWN:
         item_status = _get_item_status_from_web(item_url)
 
-        if item_status in [ItemStatus.AVAILABLE, ItemStatus.UNKNOWN]:
+        if item_status == ItemStatus.AVAILABLE:
             return True
-
-        return False
+        elif item_status == ItemStatus.SOLD:
+            return False
+        else:
+            return
 
 
 def _get_item_status_from_api(client: Vinted, item_id: int) -> ItemStatus:
