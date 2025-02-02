@@ -3,7 +3,7 @@ name: Item availability check
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '0,45 * * * *'
 
 jobs:
   availability-check:
