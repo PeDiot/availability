@@ -3,6 +3,8 @@ DATASET_ID = "vinted"
 ITEM_TABLE_ID = "item"
 LIKES_TABLE_ID = "likes"
 PINECONE_TABLE_ID = "pinecone"
+VINTED_ID_FIELD = "vinted_id"
+AVAILABLE_FIELD = "is_available"
 
 PINECONE_INDEX_NAME = "items"
 
@@ -17,9 +19,11 @@ REQUESTS_HEADERS = {
 }
 
 SOLD_CONTAINER_TYPE = "div"
-SOLD_CONTAINER_ATTRS = {'data-testid': 'item-status--content'}
+SOLD_CONTAINER_ATTRS = {"data-testid": "item-status--content"}
 SOLD_STATUS_CONTENT = "Vendu"
 
 NOT_FOUND_CONTAINER_TYPE = "h1"
-NOT_FOUND_CONTAINER_ATTRS = {'class': 'web_ui__Text__text web_ui__Text__heading web_ui__Text__center'}
+NOT_FOUND_CONTAINER_ATTRS = {
+    "class": "web_ui__Text__text web_ui__Text__heading web_ui__Text__center"
+}
 NOT_FOUND_STATUS_CONTENT = "La page n'existe pas"

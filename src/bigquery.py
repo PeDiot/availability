@@ -59,8 +59,6 @@ def load_table(
     if limit:
         query += f" LIMIT {limit}"
 
-    print(query)
-
     query_job = client.query(query)
     results = query_job.result()
 
@@ -68,7 +66,7 @@ def load_table(
         return [dict(row) for row in results]
     else:
         return results
-    
+
 
 def update_table(
     client: bigquery.Client,
