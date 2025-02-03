@@ -81,7 +81,7 @@ def main():
         client=bq_client,
         table=src.bigquery.ITEMS_AND_LIKES_QUERY,
         conditions=query_conditions,
-        order_by=[src.bigquery.OrderBy(field="num_likes", ascending=False)],
+        # order_by=[src.bigquery.OrderBy(field="num_likes", ascending=False)],
         limit=NUM_ITEMS,
         to_list=False,
     )
