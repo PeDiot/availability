@@ -12,7 +12,7 @@ from google.cloud import bigquery
 import src
 
 
-UPDATE_EVERY = 100
+UPDATE_EVERY = 10
 NUM_ITEMS = 10000
 DOMAIN = "fr"
 
@@ -23,14 +23,14 @@ def update(client: bigquery.Client, unavailable_items: List[str]) -> bool:
     try: 
         rows = [{"vinted_id": item_id, "updated_at": current_time} for item_id in unavailable_items]
         errors = client.insert_rows_json(
-            table=f"`{src.enums.DATASET_ID}.{src.enums.SOLD_TABLE_ID}`",
+            table=f"{src.enums.DATASET_ID}.{src.enums.SOLD_TABLE_ID}",
             json_rows=rows,
         )
         success = not errors
+
     except Exception as e:
         print(e)
         success = False
-
 
     if success:
         item_ids_str = ", ".join([f"'{item_id}'" for item_id in unavailable_items])
