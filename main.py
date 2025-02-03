@@ -8,7 +8,7 @@ import tqdm, json, os
 from datetime import datetime
 from vinted import Vinted
 from pinecone import Pinecone
-
+from google.cloud import bigquery
 import src
 
 
@@ -17,31 +17,28 @@ NUM_ITEMS = 10000
 DOMAIN = "fr"
 
 
-def update(available_items: List[str], unavailable_items: List[str]) -> bool:
-    iterator = zip([unavailable_items, available_items], [False, True])
+def update(client: bigquery.Client, unavailable_items: List[str]) -> bool:
+    current_time = datetime.now().isoformat()
 
-    item_ids_str, update_success = dict(), dict()
+    try: 
+        rows = [{"vinted_id": item_id, "updated_at": current_time} for item_id in unavailable_items]
+        errors = client.insert_rows_json(
+            table=f"`{src.enums.DATASET_ID}.{src.enums.AVAILABLE_TABLE_ID}`",
+            json_rows=rows,
+        )
+        success = not errors
+    except Exception as e:
+        print(e)
+        success = False
 
-    for item_ids, is_available in iterator:
-        if item_ids:
-            item_ids_str[is_available] = ", ".join([f"'{item}'" for item in item_ids])
 
-            success = src.bigquery.update_table(
-                client=bq_client,
-                dataset_id=src.enums.DATASET_ID,
-                table_id=src.enums.ITEM_TABLE_ID,
-                fields=["is_available", "updated_at"],
-                new_values=[is_available, f"'{datetime.now().isoformat()}'"],
-                conditions=[f"id IN ({item_ids_str[is_available]})"],
-            )
+    if success:
+        item_ids_str = ", ".join([f"'{item_id}'" for item_id in unavailable_items])
 
-            update_success[is_available] = success
-
-    if update_success.get(False):
         pinecone_points = src.bigquery.load_table(
             client=bq_client,
             table=f"`{src.enums.DATASET_ID}.{src.enums.PINECONE_TABLE_ID}`",
-            conditions=[f"item_id in ({item_ids_str[False]})"],
+            conditions=[f"item_id in ({item_ids_str})"],
             fields=["point_id"],
             to_list=True,
         )
@@ -53,10 +50,10 @@ def update(available_items: List[str], unavailable_items: List[str]) -> bool:
                 client=bq_client,
                 dataset_id=src.enums.DATASET_ID,
                 table_id=src.enums.PINECONE_TABLE_ID,
-                conditions=[f"item_id in ({item_ids_str[False]})"],
+                conditions=[f"item_id in ({item_ids_str})"],
             )
 
-    return update_success.get(True)
+    return success
 
 
 def main():
@@ -80,22 +77,16 @@ def main():
         f"MOD(FARM_FINGERPRINT(CAST({src.enums.VINTED_ID_FIELD} AS STRING)), {total_shards}) = {shard_id}",
     ]
 
-    order_by_clauses = [
-        src.bigquery.OrderBy(field="updated_at", ascending=True),
-        src.bigquery.OrderBy(field="num_likes", ascending=False),
-    ]
-
     loader = src.bigquery.load_table(
         client=bq_client,
         table=src.bigquery.ITEMS_AND_LIKES_QUERY,
         conditions=query_conditions,
-        order_by=order_by_clauses,
+        order_by=[src.bigquery.OrderBy(field="num_likes", ascending=False)],
         limit=NUM_ITEMS,
         to_list=False,
     )
 
-    available_items, unavailable_items = [], []
-    n, n_success, n_available, n_unavailable, n_updated = 0, 0, 0, 0, 0
+    unavailable_items, n, n_success, n_available, n_unavailable, n_updated = [], 0, 0, 0, 0, 0
     loop = tqdm.tqdm(iterable=loader, total=loader.total_rows)
 
     for row in loop:
@@ -114,20 +105,19 @@ def main():
             n_success += 1
 
             if is_available is False:
-                unavailable_items.append(row.id)
+                unavailable_items.append(row.vinted_id)
                 n_unavailable += 1
             else:
                 n_available += 1
-                available_items.append(row.id)
 
         except Exception as e:
             pass
 
-        if n % UPDATE_EVERY == 0 and (unavailable_items or available_items):
-            if update(available_items, unavailable_items):
-                n_updated += len(unavailable_items) + len(available_items)
+        if n % UPDATE_EVERY == 0 and unavailable_items:
+            if update(bq_client, unavailable_items):
+                n_updated += len(unavailable_items)
 
-            available_items, unavailable_items = [], []
+            unavailable_items = []
 
         loop.set_description(
             f"Processed: {n} | "
@@ -138,9 +128,9 @@ def main():
             f"Updated: {n_updated}"
         )
 
-    if unavailable_items or available_items:
-        if update(available_items, unavailable_items):
-            n_updated += len(unavailable_items) + len(available_items)
+    if unavailable_items:
+        if update(bq_client, unavailable_items):
+            n_updated += len(unavailable_items)
 
         loop.set_description(
             f"Processed: {n} | "

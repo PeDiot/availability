@@ -11,6 +11,7 @@ ITEMS_AND_LIKES_QUERY = f"""
 SELECT item.*, COALESCE(likes.count, 0) AS num_likes
 FROM `{PROJECT_ID}.{DATASET_ID}.{ITEM_TABLE_ID}` AS item
 LEFT JOIN `{PROJECT_ID}.{DATASET_ID}.{LIKES_TABLE_ID}` AS likes USING (vinted_id)
+WHERE item.vinted_id NOT IN (SELECT vinted_id FROM `{PROJECT_ID}.{DATASET_ID}.{AVAILABLE_TABLE_ID}`)
 ) AS tmp
 """
 
