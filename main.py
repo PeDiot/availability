@@ -23,7 +23,7 @@ def update(client: bigquery.Client, unavailable_items: List[str]) -> bool:
     try: 
         rows = [{"vinted_id": item_id, "updated_at": current_time} for item_id in unavailable_items]
         errors = client.insert_rows_json(
-            table=f"`{src.enums.DATASET_ID}.{src.enums.AVAILABLE_TABLE_ID}`",
+            table=f"`{src.enums.DATASET_ID}.{src.enums.SOLD_TABLE_ID}`",
             json_rows=rows,
         )
         success = not errors

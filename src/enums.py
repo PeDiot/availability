@@ -1,7 +1,7 @@
 PROJECT_ID = "carlia"
 DATASET_ID = "vinted"
 ITEM_TABLE_ID = "item"
-AVAILABLE_TABLE_ID = "availability"
+SOLD_TABLE_ID = "sold"
 LIKES_TABLE_ID = "likes"
 PINECONE_TABLE_ID = "pinecone"
 VINTED_ID_FIELD = "vinted_id"
