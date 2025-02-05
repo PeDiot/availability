@@ -20,8 +20,11 @@ DOMAIN = "fr"
 def update(client: bigquery.Client, unavailable_items: List[str]) -> bool:
     current_time = datetime.now().isoformat()
 
-    try: 
-        rows = [{"vinted_id": item_id, "updated_at": current_time} for item_id in unavailable_items]
+    try:
+        rows = [
+            {"vinted_id": item_id, "updated_at": current_time}
+            for item_id in unavailable_items
+        ]
         errors = client.insert_rows_json(
             table=f"{src.enums.DATASET_ID}.{src.enums.SOLD_TABLE_ID}",
             json_rows=rows,
@@ -85,7 +88,14 @@ def main():
         to_list=False,
     )
 
-    unavailable_items, n, n_success, n_available, n_unavailable, n_updated = [], 0, 0, 0, 0, 0
+    unavailable_items, n, n_success, n_available, n_unavailable, n_updated = (
+        [],
+        0,
+        0,
+        0,
+        0,
+        0,
+    )
     loop = tqdm.tqdm(iterable=loader, total=loader.total_rows)
 
     for row in loop:
@@ -93,9 +103,7 @@ def main():
 
         try:
             is_available = src.status.is_available(
-                client=vinted_client, 
-                item_id=int(row.vinted_id),
-                item_url=row.url
+                client=vinted_client, item_id=int(row.vinted_id), item_url=row.url
             )
 
             if is_available is None:
