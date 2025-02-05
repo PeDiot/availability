@@ -2,7 +2,7 @@ import sys
 
 sys.path.append("../")
 
-from typing import List
+from typing import List, Tuple
 
 import tqdm, json, os
 from datetime import datetime
@@ -12,18 +12,18 @@ from google.cloud import bigquery
 import src
 
 
-UPDATE_EVERY = 100
+UPDATE_EVERY = 200
 NUM_ITEMS = 10000
 DOMAIN = "fr"
 
 
-def update(client: bigquery.Client, unavailable_items: List[str]) -> bool:
+def update(client: bigquery.Client, unavailable_items: List[Tuple[str, str]]) -> bool:
     current_time = datetime.now().isoformat()
 
     try:
         rows = [
-            {"vinted_id": item_id, "updated_at": current_time}
-            for item_id in unavailable_items
+            {"vinted_id": vinted_id, "updated_at": current_time}
+            for _, vinted_id in unavailable_items
         ]
         errors = client.insert_rows_json(
             table=f"{src.enums.DATASET_ID}.{src.enums.SOLD_TABLE_ID}",
@@ -36,7 +36,7 @@ def update(client: bigquery.Client, unavailable_items: List[str]) -> bool:
         success = False
 
     if success:
-        item_ids_str = ", ".join([f"'{item_id}'" for item_id in unavailable_items])
+        item_ids_str = ", ".join([f"'{item_id}'" for item_id, _ in unavailable_items])
 
         pinecone_points = src.bigquery.load_table(
             client=bq_client,
@@ -88,14 +88,8 @@ def main():
         to_list=False,
     )
 
-    unavailable_items, n, n_success, n_available, n_unavailable, n_updated = (
-        [],
-        0,
-        0,
-        0,
-        0,
-        0,
-    )
+    unavailable_items = []
+    n, n_success, n_available, n_unavailable, n_updated = 0, 0, 0, 0, 0
     loop = tqdm.tqdm(iterable=loader, total=loader.total_rows)
 
     for row in loop:
@@ -112,7 +106,7 @@ def main():
             n_success += 1
 
             if is_available is False:
-                unavailable_items.append(row.vinted_id)
+                unavailable_items.append((row.id, row.vinted_id))
                 n_unavailable += 1
             else:
                 n_available += 1
