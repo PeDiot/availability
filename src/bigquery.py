@@ -1,4 +1,4 @@
-from typing import List, Dict, Any, Union, Tuple
+from typing import List, Dict, Any, Union, Optional
 from dataclasses import dataclass
 
 from google.oauth2 import service_account
@@ -6,26 +6,30 @@ from google.cloud import bigquery
 from .enums import *
 
 
-ITEMS_AND_LIKES_QUERY = f"""
+BASE_QUERY = f"""
 (
-SELECT item.*, COALESCE(likes.count, 0) AS num_likes
-FROM `{PROJECT_ID}.{DATASET_ID}.{ITEM_TABLE_ID}` AS item
-LEFT JOIN `{PROJECT_ID}.{DATASET_ID}.{LIKES_TABLE_ID}` AS likes USING (vinted_id)
-WHERE item.vinted_id NOT IN (SELECT vinted_id FROM `{PROJECT_ID}.{DATASET_ID}.{SOLD_TABLE_ID}`)
+SELECT *
+FROM `{PROJECT_ID}.{DATASET_ID}.{ITEM_TABLE_ID}`
+WHERE vinted_id NOT IN (SELECT vinted_id FROM `{PROJECT_ID}.{DATASET_ID}.{SOLD_TABLE_ID}`)
 ) AS tmp
 """
+
+DEFAULT_ORDER_BY = "RAND()"
 
 
 @dataclass
 class OrderBy:
-    field: str
-    ascending: bool
+    field: Optional[str] = None
+    ascending: Optional[bool] = None
 
     def __post_init__(self):
         self.direction = "ASC" if self.ascending else "DESC"
 
     def __str__(self):
-        return f"{self.field} {self.direction}"
+        if self.field:
+            return f"{self.field} {self.direction}"
+        else:
+            return DEFAULT_ORDER_BY
 
 
 def init_client(credentials_dict: Dict) -> bigquery.Client:
@@ -60,6 +64,7 @@ def load_table(
     if limit:
         query += f" LIMIT {limit}"
 
+    print(query)
     query_job = client.query(query)
     results = query_job.result()
 

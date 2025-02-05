@@ -12,7 +12,7 @@ from google.cloud import bigquery
 import src
 
 
-UPDATE_EVERY = 10
+UPDATE_EVERY = 100
 NUM_ITEMS = 10000
 DOMAIN = "fr"
 
@@ -79,9 +79,8 @@ def main():
 
     loader = src.bigquery.load_table(
         client=bq_client,
-        table=src.bigquery.ITEMS_AND_LIKES_QUERY,
+        table=src.bigquery.BASE_QUERY,
         conditions=query_conditions,
-        # order_by=[src.bigquery.OrderBy(field="num_likes", ascending=False)],
         limit=NUM_ITEMS,
         to_list=False,
     )
