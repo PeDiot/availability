@@ -47,10 +47,9 @@ def update(client: bigquery.Client, unavailable_items: List[Tuple[str, str]]) ->
         )
 
         pinecone_point_ids = [point["point_id"] for point in pinecone_points]
-
         success = src.pinecone.delete_points(pinecone_index, pinecone_point_ids)
 
-    return success
+    return success, pinecone_point_ids
 
 
 def main():
@@ -82,7 +81,7 @@ def main():
         to_list=False,
     )
 
-    unavailable_items = []
+    unavailable_items, pinecone_point_ids = [], []
     n, n_success, n_available, n_unavailable, n_updated = 0, 0, 0, 0, 0
     loop = tqdm.tqdm(iterable=loader, total=loader.total_rows)
 
@@ -109,8 +108,10 @@ def main():
             pass
 
         if n % UPDATE_EVERY == 0 and unavailable_items:
-            if update(bq_client, unavailable_items):
+            success, pinecone_point_ids_ = update(bq_client, unavailable_items)
+            if success:
                 n_updated += len(unavailable_items)
+                pinecone_point_ids.extend(pinecone_point_ids_)
 
             unavailable_items = []
 
@@ -124,17 +125,13 @@ def main():
         )
 
     if unavailable_items:
-        if update(bq_client, unavailable_items):
+        success, pinecone_point_ids_ = update(bq_client, unavailable_items)
+        if success:
             n_updated += len(unavailable_items)
+            pinecone_point_ids.extend(pinecone_point_ids_)
 
-        loop.set_description(
-            f"Processed: {n} | "
-            f"Success: {n_success} | "
-            f"Success rate: {n_success / n:.2f} | "
-            f"Available: {n_available} | "
-            f"Unavailable: {n_unavailable} | "
-            f"Updated: {n_updated}"
-        )
+    if pinecone_point_ids:
+        src.pinecone.delete_points(pinecone_index, pinecone_point_ids)
 
 
 if __name__ == "__main__":
