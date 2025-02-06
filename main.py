@@ -13,7 +13,7 @@ import src
 
 
 UPDATE_EVERY = 200
-NUM_ITEMS = 10000
+NUM_ITEMS = 20000
 DOMAIN = "fr"
 
 
