@@ -131,7 +131,8 @@ def main():
             pinecone_point_ids.extend(pinecone_point_ids_)
 
     if pinecone_point_ids:
-        src.pinecone.delete_points(pinecone_index, pinecone_point_ids)
+        if src.pinecone.delete_points(pinecone_index, pinecone_point_ids):
+            print(f"Deleted {len(pinecone_point_ids)} points.")
 
 
 if __name__ == "__main__":
