@@ -48,13 +48,7 @@ def update(client: bigquery.Client, unavailable_items: List[Tuple[str, str]]) ->
 
         pinecone_point_ids = [point["point_id"] for point in pinecone_points]
 
-        if src.pinecone.delete_points(pinecone_index, pinecone_point_ids):
-            return src.bigquery.delete_from_table(
-                client=bq_client,
-                dataset_id=src.enums.DATASET_ID,
-                table_id=src.enums.PINECONE_TABLE_ID,
-                conditions=[f"item_id in ({item_ids_str})"],
-            )
+        success = src.pinecone.delete_points(pinecone_index, pinecone_point_ids)
 
     return success
 
