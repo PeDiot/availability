@@ -1,5 +1,6 @@
-PROJECT_ID = "carlia"
+PROJECT_ID = "recove-450509"
 DATASET_ID = "vinted"
+
 ITEM_TABLE_ID = "item"
 SOLD_TABLE_ID = "sold"
 LIKES_TABLE_ID = "likes"
