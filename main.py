@@ -12,8 +12,8 @@ from google.cloud import bigquery
 import src
 
 
-UPDATE_EVERY = 200
-NUM_ITEMS = 10000
+UPDATE_EVERY = 100
+NUM_ITEMS = 1000
 DOMAIN = "fr"
 
 
