@@ -128,7 +128,7 @@ def main() -> None:
 
     bq_client, pinecone_index, vinted_client = init_clients(secrets, DOMAIN)
     base_loader, likes_loader, total_rows = get_data_loaders(
-        bq_client, shard_id, total_shards, NUM_ITEMS // 2, NUM_ITEMS - (NUM_ITEMS // 2)
+        bq_client, shard_id, total_shards
     )
 
     unavailable_items: List[Tuple[str, str]] = []
