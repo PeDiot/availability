@@ -102,7 +102,6 @@ def get_data_loaders(
 
 
 def process_item(client: src.vinted.client.Vinted, row: bigquery.Row) -> Tuple[bool, Optional[Tuple[str, str]]]:
-    print(row.vinted_id, row.url)
     try:
         is_available = src.status.is_available(
             client=client,
