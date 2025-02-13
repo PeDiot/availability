@@ -14,6 +14,15 @@ WHERE vinted_id NOT IN (SELECT vinted_id FROM `{PROJECT_ID}.{DATASET_ID}.{SOLD_T
 ) AS tmp
 """
 
+LIKES_QUERY = f"""
+(
+SELECT item.*, likes.count AS likes_count
+FROM `{PROJECT_ID}.{DATASET_ID}.{ITEM_TABLE_ID}` item
+INNER JOIN `{PROJECT_ID}.{DATASET_ID}.{LIKES_TABLE_ID}` likes USING (vinted_id)
+WHERE vinted_id NOT IN (SELECT vinted_id FROM `{PROJECT_ID}.{DATASET_ID}.{SOLD_TABLE_ID}`)
+) AS tmp
+"""
+
 DEFAULT_ORDER_BY = "RAND()"
 
 
