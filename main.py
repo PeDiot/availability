@@ -6,9 +6,9 @@ from typing import List, Tuple
 
 import tqdm, json, os
 from datetime import datetime
-from vinted import Vinted
 from pinecone import Pinecone
 from google.cloud import bigquery
+
 import src
 
 
@@ -66,7 +66,7 @@ def main():
     pinecone_client = Pinecone(api_key=secrets.get("PINECONE_API_KEY"))
     pinecone_index = pinecone_client.Index(src.enums.PINECONE_INDEX_NAME)
 
-    vinted_client = Vinted(domain=DOMAIN)
+    vinted_client = src.vinted.client.Vinted(domain=DOMAIN)
 
     query_conditions = [
         f"{src.enums.AVAILABLE_FIELD} = true",
