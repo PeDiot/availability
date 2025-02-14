@@ -116,6 +116,7 @@ def process_item(
         )
 
         if is_available is None:
+            print(row.url)
             return False, None
 
         if is_available is False:
@@ -124,6 +125,7 @@ def process_item(
         return True, None
 
     except Exception:
+        print(row.url)
         return False, None
 
 
