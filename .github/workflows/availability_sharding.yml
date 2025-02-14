@@ -1,4 +1,4 @@
-name: Item availability check
+name: Item availability check with sharding
 
 on:
   workflow_dispatch:
