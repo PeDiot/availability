@@ -29,3 +29,5 @@ NOT_FOUND_CONTAINER_ATTRS = {
     "class": "web_ui__Text__text web_ui__Text__heading web_ui__Text__center"
 }
 NOT_FOUND_STATUS_CONTENT = "La page n'existe pas"
+
+INVALID_BRANDS = ["", "Vintage Dressing", "Sonstiges"]

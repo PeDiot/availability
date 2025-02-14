@@ -15,7 +15,8 @@ import src
 
 UPDATE_EVERY = 100
 NUM_ITEMS = 1000
-LIKES_ITEMS_ALPHA = 0.4
+TOP_BRANDS_ALPHA = 0.4
+TOP_BRANDS_N = 200
 DOMAIN = "fr"
 
 
@@ -77,8 +78,8 @@ def get_data_loaders(
         f"MOD(FARM_FINGERPRINT(CAST({src.enums.VINTED_ID_FIELD} AS STRING)), {total_shards}) = {shard_id}",
     ]
 
-    num_likes_items = int(NUM_ITEMS *  LIKES_ITEMS_ALPHA)
-    num_base_items = NUM_ITEMS - num_likes_items
+    num_top_brands_items = int(NUM_ITEMS *  TOP_BRANDS_ALPHA)
+    num_base_items = NUM_ITEMS - num_top_brands_items
 
     base_loader = src.bigquery.load_table(
         client=client,
@@ -88,17 +89,20 @@ def get_data_loaders(
         to_list=False,
     )
 
-    likes_loader = src.bigquery.load_table(
+    top_brands = src.bigquery.get_top_brands(client, TOP_BRANDS_N)
+    top_brands_str = ", ".join(f'"{brand}"' for brand in top_brands)
+    query_conditions.append(f"brand IN ({top_brands_str})")
+
+    top_brands_loader = src.bigquery.load_table(
         client=client,
-        table=src.bigquery.LIKES_QUERY,
+        table=src.bigquery.BASE_QUERY,
         conditions=query_conditions,
-        limit=num_likes_items,
-        order_by=[src.bigquery.OrderBy(field="likes_count", ascending=False)],
+        limit=num_top_brands_items,
         to_list=False,
     )
 
-    total_rows = base_loader.total_rows + likes_loader.total_rows
-    return base_loader, likes_loader, total_rows
+    total_rows = base_loader.total_rows + top_brands_loader.total_rows
+    return base_loader, top_brands_loader, total_rows
 
 
 def process_item(client: src.vinted.client.Vinted, row: bigquery.Row) -> Tuple[bool, Optional[Tuple[str, str]]]:
@@ -127,7 +131,7 @@ def main() -> None:
     total_shards = int(os.getenv("TOTAL_SHARDS", "1"))
 
     bq_client, pinecone_index, vinted_client = init_clients(secrets, DOMAIN)
-    base_loader, likes_loader, total_rows = get_data_loaders(
+    base_loader, top_brands_loader, total_rows = get_data_loaders(
         bq_client, shard_id, total_shards
     )
 
@@ -135,7 +139,7 @@ def main() -> None:
     pinecone_point_ids: List[str] = []
     n = n_success = n_available = n_unavailable = n_updated = 0
     
-    combined_loader = itertools.chain(base_loader, likes_loader)
+    combined_loader = itertools.chain(base_loader, top_brands_loader)
     loop = tqdm.tqdm(iterable=combined_loader, total=total_rows)
 
     for row in loop:
