@@ -8,6 +8,10 @@ on:
 jobs:
   availability-check:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5]  
+      fail-fast: false
     
     steps:
       - name: Checkout repository
@@ -22,4 +26,6 @@ jobs:
       - name: Run Docker Container
         env:
           SECRETS_JSON: ${{ secrets.SECRETS_JSON }}
-        run: docker run -e SECRETS_JSON availability
+          SHARD_ID: ${{ matrix.shard }}
+          TOTAL_SHARDS: 6
+        run: docker run -e SECRETS_JSON -e SHARD_ID -e TOTAL_SHARDS availability

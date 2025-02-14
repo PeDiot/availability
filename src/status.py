@@ -15,8 +15,11 @@ class ItemStatus(Enum):
     UNKNOWN = "unknown"
 
 
-def is_available(client: Vinted, item_id: int, item_url: str) -> bool | None:
-    item_status = _get_item_status_from_api(client, item_id)
+def is_available(client: Vinted, item_id: int, item_url: str, use_api: bool) -> bool | None:
+    if use_api:
+        item_status = _get_item_status_from_api(client, item_id)
+    else:
+        item_status = ItemStatus.UNKNOWN
 
     if item_status == ItemStatus.UNKNOWN:
         item_status = _get_item_status_from_web(item_url)

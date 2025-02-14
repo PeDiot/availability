@@ -13,11 +13,12 @@ from google.cloud import bigquery
 import src
 
 
+DOMAIN = "fr"
+USE_API = False
 UPDATE_EVERY = 100
 NUM_ITEMS = 1000
 TOP_BRANDS_ALPHA = 0.2
 TOP_BRANDS_N = 200
-DOMAIN = "fr"
 
 
 def update(
@@ -25,36 +26,37 @@ def update(
     index: data.index.Index,
     unavailable_items: List[Tuple[str, str]],
 ) -> bool:
+    success = False
     current_time = datetime.now().isoformat()
+    item_ids_str = ", ".join([f"'{item_id}'" for item_id, _ in unavailable_items])
 
-    try:
-        rows = [
-            {"vinted_id": vinted_id, "updated_at": current_time}
-            for _, vinted_id in unavailable_items
-        ]
-        errors = client.insert_rows_json(
-            table=f"{src.enums.DATASET_ID}.{src.enums.SOLD_TABLE_ID}",
-            json_rows=rows,
-        )
-        success = not errors
+    pinecone_points = src.bigquery.load_table(
+        client=client,
+        table=f"`{src.enums.DATASET_ID}.{src.enums.PINECONE_TABLE_ID}`",
+        conditions=[f"item_id in ({item_ids_str})"],
+        fields=["point_id"],
+        to_list=True,
+    )
 
-    except Exception as e:
-        print(e)
-        success = False
-
-    if success:
-        item_ids_str = ", ".join([f"'{item_id}'" for item_id, _ in unavailable_items])
-
-        pinecone_points = src.bigquery.load_table(
-            client=client,
-            table=f"`{src.enums.DATASET_ID}.{src.enums.PINECONE_TABLE_ID}`",
-            conditions=[f"item_id in ({item_ids_str})"],
-            fields=["point_id"],
-            to_list=True,
-        )
-
-        pinecone_point_ids = [point["point_id"] for point in pinecone_points]
-        success = src.pinecone.delete_points(index, pinecone_point_ids)
+    pinecone_point_ids = [point["point_id"] for point in pinecone_points]
+    
+    if not src.pinecone.delete_points(index, pinecone_point_ids): 
+        pinecone_point_ids = []
+    
+    else:
+        try:
+            rows = [
+                {"vinted_id": vinted_id, "updated_at": current_time}
+                for _, vinted_id in unavailable_items
+            ]
+            errors = client.insert_rows_json(
+                table=f"{src.enums.DATASET_ID}.{src.enums.SOLD_TABLE_ID}",
+                json_rows=rows,
+            )
+            success = not errors
+        except:
+            success = False
+            pinecone_point_ids = []
 
     return success, pinecone_point_ids
 
@@ -112,7 +114,10 @@ def process_item(
 ) -> Tuple[bool, Optional[Tuple[str, str]]]:
     try:
         is_available = src.status.is_available(
-            client=client, item_id=int(row.vinted_id), item_url=row.url
+            client=client,
+            item_id=int(row.vinted_id),
+            item_url=row.url,
+            use_api=USE_API,
         )
 
         if is_available is None:
