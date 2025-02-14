@@ -83,7 +83,7 @@ def get_data_loaders(
         "client": client,
         "table": src.bigquery.BASE_QUERY,
         "to_list": False,
-        "query_conditions": [
+        "conditions": [
             f"{src.enums.AVAILABLE_FIELD} = true",
             f"MOD(FARM_FINGERPRINT(CAST({src.enums.VINTED_ID_FIELD} AS STRING)), {total_shards}) = {shard_id}",
         ],
@@ -96,7 +96,7 @@ def get_data_loaders(
 
     top_brands = src.bigquery.get_top_brands(client, TOP_BRANDS_N)
     top_brands_str = ", ".join(f'"{brand}"' for brand in top_brands)
-    kwargs["query_conditions"].append(f"brand IN ({top_brands_str})")
+    kwargs["conditions"].append(f"brand IN ({top_brands_str})")
 
     top_brands_loader = src.bigquery.load_table(
         limit=num_top_brands_items,
