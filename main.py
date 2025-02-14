@@ -82,7 +82,6 @@ def get_data_loaders(
     kwargs = {
         "client": client,
         "table": src.bigquery.BASE_QUERY,
-        "limit": NUM_ITEMS,
         "to_list": False,
         "query_conditions": [
             f"{src.enums.AVAILABLE_FIELD} = true",
