@@ -19,20 +19,22 @@ class Vinted:
         return response.cookies
 
     def _call(self, method: Literal["get"], *args, **kwargs):
-        if hasattr(self, 'headers') and 'User-Agent' in self.headers:
-            self.headers['User-Agent'] = random.choice(USER_AGENTS)
-            
+        if hasattr(self, "headers") and "User-Agent" in self.headers:
+            self.headers["User-Agent"] = random.choice(USER_AGENTS)
+
         return self.session.request(
             method=method, headers=self.headers, cookies=self.cookies, *args, **kwargs
         )
 
-    def _get(self, endpoint: Endpoints, format_values=None, *args, **kwargs) -> VintedResponse:
+    def _get(
+        self, endpoint: Endpoints, format_values=None, *args, **kwargs
+    ) -> VintedResponse:
         if format_values:
             url = self.api_url + endpoint.value.format(format_values)
         else:
             url = self.api_url + endpoint.value
-        
-        response = self._call(method="get", url=url, *args, **kwargs)        
+
+        response = self._call(method="get", url=url, *args, **kwargs)
         status_code = response.status_code
 
         if status_code == 200:
@@ -41,9 +43,9 @@ class Vinted:
                 return VintedResponse(status_code, data)
             except requests.exceptions.JSONDecodeError:
                 return VintedResponse(status_code)
-        
+
         return VintedResponse(status_code=status_code)
-            
+
     def item_info(self, item_id: int) -> VintedResponse:
         try:
             return self._get(Endpoints.ITEMS, item_id)

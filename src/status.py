@@ -3,7 +3,7 @@ from enum import Enum
 import requests
 from bs4 import BeautifulSoup
 
-from .vinted.client import Vinted 
+from .vinted.client import Vinted
 from .vinted.status import check_is_available
 from .enums import *
 
@@ -35,7 +35,7 @@ def _get_item_status_from_api(client: Vinted, item_id: int) -> ItemStatus:
 
         if is_available is None:
             return ItemStatus.UNKNOWN
-        
+
         return ItemStatus.AVAILABLE if is_available else ItemStatus.SOLD
 
     except Exception as e:

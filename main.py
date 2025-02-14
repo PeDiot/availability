@@ -20,7 +20,11 @@ TOP_BRANDS_N = 200
 DOMAIN = "fr"
 
 
-def update(client: bigquery.Client, index: data.index.Index, unavailable_items: List[Tuple[str, str]]) -> bool:
+def update(
+    client: bigquery.Client,
+    index: data.index.Index,
+    unavailable_items: List[Tuple[str, str]],
+) -> bool:
     current_time = datetime.now().isoformat()
 
     try:
@@ -55,7 +59,9 @@ def update(client: bigquery.Client, index: data.index.Index, unavailable_items: 
     return success, pinecone_point_ids
 
 
-def init_clients(secrets: dict, domain: str) -> Tuple[bigquery.Client, Pinecone, src.vinted.client.Vinted]:
+def init_clients(
+    secrets: dict, domain: str
+) -> Tuple[bigquery.Client, Pinecone, src.vinted.client.Vinted]:
     gcp_credentials = secrets.get("GCP_CREDENTIALS")
     gcp_credentials["private_key"] = gcp_credentials["private_key"].replace("\\n", "\n")
     bq_client = src.bigquery.init_client(credentials_dict=gcp_credentials)
@@ -64,7 +70,7 @@ def init_clients(secrets: dict, domain: str) -> Tuple[bigquery.Client, Pinecone,
     pinecone_index = pinecone_client.Index(src.enums.PINECONE_INDEX_NAME)
 
     vinted_client = src.vinted.client.Vinted(domain=domain)
-    
+
     return bq_client, pinecone_index, vinted_client
 
 
@@ -73,54 +79,51 @@ def get_data_loaders(
     shard_id: int,
     total_shards: int,
 ) -> Tuple[bigquery.table.RowIterator, bigquery.table.RowIterator, int]:
-    query_conditions = [
-        f"{src.enums.AVAILABLE_FIELD} = true",
-        f"MOD(FARM_FINGERPRINT(CAST({src.enums.VINTED_ID_FIELD} AS STRING)), {total_shards}) = {shard_id}",
-    ]
+    kwargs = {
+        "client": client,
+        "table": src.bigquery.BASE_QUERY,
+        "limit": NUM_ITEMS,
+        "to_list": False,
+        "query_conditions": [
+            f"{src.enums.AVAILABLE_FIELD} = true",
+            f"MOD(FARM_FINGERPRINT(CAST({src.enums.VINTED_ID_FIELD} AS STRING)), {total_shards}) = {shard_id}",
+        ],
+    }
 
-    num_top_brands_items = int(NUM_ITEMS *  TOP_BRANDS_ALPHA)
+    num_top_brands_items = int(NUM_ITEMS * TOP_BRANDS_ALPHA)
     num_base_items = NUM_ITEMS - num_top_brands_items
 
-    base_loader = src.bigquery.load_table(
-        client=client,
-        table=src.bigquery.BASE_QUERY,
-        conditions=query_conditions,
-        limit=num_base_items,
-        to_list=False,
-    )
+    base_loader = src.bigquery.load_table(limit=num_base_items, **kwargs)
 
     top_brands = src.bigquery.get_top_brands(client, TOP_BRANDS_N)
     top_brands_str = ", ".join(f'"{brand}"' for brand in top_brands)
-    query_conditions.append(f"brand IN ({top_brands_str})")
+    kwargs["query_conditions"].append(f"brand IN ({top_brands_str})")
 
     top_brands_loader = src.bigquery.load_table(
-        client=client,
-        table=src.bigquery.BASE_QUERY,
-        conditions=query_conditions,
         limit=num_top_brands_items,
-        to_list=False,
+        **kwargs,
     )
 
     total_rows = base_loader.total_rows + top_brands_loader.total_rows
     return base_loader, top_brands_loader, total_rows
 
 
-def process_item(client: src.vinted.client.Vinted, row: bigquery.Row) -> Tuple[bool, Optional[Tuple[str, str]]]:
+def process_item(
+    client: src.vinted.client.Vinted, row: bigquery.Row
+) -> Tuple[bool, Optional[Tuple[str, str]]]:
     try:
         is_available = src.status.is_available(
-            client=client,
-            item_id=int(row.vinted_id),
-            item_url=row.url
+            client=client, item_id=int(row.vinted_id), item_url=row.url
         )
-        
+
         if is_available is None:
             return False, None
-            
+
         if is_available is False:
             return True, (row.id, row.vinted_id)
-        
+
         return True, None
-            
+
     except Exception:
         return False, None
 
@@ -138,14 +141,14 @@ def main() -> None:
     unavailable_items: List[Tuple[str, str]] = []
     pinecone_point_ids: List[str] = []
     n = n_success = n_available = n_unavailable = n_updated = 0
-    
+
     combined_loader = itertools.chain(base_loader, top_brands_loader)
     loop = tqdm.tqdm(iterable=combined_loader, total=total_rows)
 
     for row in loop:
         n += 1
         success, item = process_item(vinted_client, row)
-        
+
         if success:
             n_success += 1
             if item:
@@ -155,7 +158,9 @@ def main() -> None:
                 n_available += 1
 
         if n % UPDATE_EVERY == 0 and unavailable_items:
-            success, pinecone_point_ids_ = update(bq_client, pinecone_index, unavailable_items)
+            success, pinecone_point_ids_ = update(
+                bq_client, pinecone_index, unavailable_items
+            )
             if success:
                 n_updated += len(unavailable_items)
                 pinecone_point_ids.extend(pinecone_point_ids_)

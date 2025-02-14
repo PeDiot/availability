@@ -11,7 +11,7 @@ def delete_points(index: Index, ids: List[str]) -> bool:
 
     try:
         for i in range(0, len(ids), BATCH_SIZE):
-            batch = ids[i:i + BATCH_SIZE]
+            batch = ids[i : i + BATCH_SIZE]
             index.delete(ids=batch)
         return True
 

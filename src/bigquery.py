@@ -130,9 +130,9 @@ def delete_from_table(
         return False
 
 
-def get_top_brands(client: bigquery.Client, top_n: int) -> List[str]: 
+def get_top_brands(client: bigquery.Client, top_n: int) -> List[str]:
     invalid_brands_str = ", ".join(f"'{brand}'" for brand in INVALID_BRANDS)
-    
+
     query = f"""
     (
     SELECT brand, COUNT(*) AS n
@@ -143,6 +143,6 @@ def get_top_brands(client: bigquery.Client, top_n: int) -> List[str]:
     LIMIT {top_n}
     ) AS tmp
     """
-    
+
     loader = load_table(client=client, table=query, fields=["brand"], to_list=False)
     return [row.brand for row in loader]
