@@ -17,7 +17,7 @@ DOMAIN = "fr"
 USE_API = False
 UPDATE_EVERY = 100
 NUM_ITEMS = 1000
-TOP_BRANDS_ALPHA = 0.2
+TOP_BRANDS_ALPHA = 0.3
 TOP_BRANDS_N = 200
 
 
@@ -91,21 +91,22 @@ def get_data_loaders(
         ],
     }
 
-    num_top_brands_items = int(NUM_ITEMS * TOP_BRANDS_ALPHA)
-    num_base_items = NUM_ITEMS - num_top_brands_items
-
+    num_base_items = int(NUM_ITEMS * (1 - TOP_BRANDS_ALPHA))
     base_loader = src.bigquery.load_table(limit=num_base_items, **kwargs)
+    top_brands_loader = None
 
-    top_brands = src.bigquery.get_top_brands(client, TOP_BRANDS_N)
-    top_brands_str = ", ".join(f'"{brand}"' for brand in top_brands)
-    kwargs["conditions"].append(f"brand IN ({top_brands_str})")
+    if TOP_BRANDS_ALPHA > 0:
+        num_top_brands_items = NUM_ITEMS - num_base_items
+        top_brands = src.bigquery.get_top_brands(client, TOP_BRANDS_N)
+        top_brands_str = ", ".join(f'"{brand}"' for brand in top_brands)
+        kwargs["conditions"].append(f"brand IN ({top_brands_str})")
 
-    top_brands_loader = src.bigquery.load_table(
-        limit=num_top_brands_items,
-        **kwargs,
-    )
+        top_brands_loader = src.bigquery.load_table(
+            limit=num_top_brands_items,
+            **kwargs,
+        )
 
-    total_rows = base_loader.total_rows + top_brands_loader.total_rows
+    total_rows = base_loader.total_rows + (top_brands_loader.total_rows if top_brands_loader else 0)
     return base_loader, top_brands_loader, total_rows
 
 
@@ -138,15 +139,18 @@ def main() -> None:
     total_shards = int(os.getenv("TOTAL_SHARDS", "1"))
 
     bq_client, pinecone_index, vinted_client = init_clients(secrets, DOMAIN)
+    
     base_loader, top_brands_loader, total_rows = get_data_loaders(
         bq_client, shard_id, total_shards
     )
+    if top_brands_loader:
+        combined_loader = itertools.chain(base_loader, top_brands_loader)
+    else:
+        combined_loader = base_loader
 
     unavailable_items: List[Tuple[str, str]] = []
     pinecone_point_ids: List[str] = []
     n = n_success = n_available = n_unavailable = n_updated = 0
-
-    combined_loader = itertools.chain(base_loader, top_brands_loader)
     loop = tqdm.tqdm(iterable=combined_loader, total=total_rows)
 
     for row in loop:
