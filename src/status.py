@@ -6,16 +6,12 @@ from bs4 import BeautifulSoup
 from .vinted.client import Vinted
 from .vinted.status import check_is_available
 from .enums import *
+from .models import ItemStatus
 
 
-class ItemStatus(Enum):
-    AVAILABLE = "available"
-    SOLD = "sold"
-    NOT_FOUND = "not_found"
-    UNKNOWN = "unknown"
-
-
-def is_available(client: Vinted, item_id: int, item_url: str, use_api: bool) -> bool | None:
+def is_available(
+    client: Vinted, item_id: int, item_url: str, use_api: bool
+) -> bool | None:
     if use_api:
         item_status = _get_item_status_from_api(client, item_id)
     else:

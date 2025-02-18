@@ -1,1 +1,1 @@
-from . import bigquery, enums, pinecone, status
+from . import bigquery, enums, pinecone, status, models
