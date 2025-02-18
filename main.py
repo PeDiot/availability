@@ -3,9 +3,9 @@ import itertools
 
 sys.path.append("../")
 
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 
-import tqdm, json, os
+import tqdm, json, os, random
 from datetime import datetime
 from pinecone import Pinecone, data
 from google.cloud import bigquery
@@ -15,49 +15,11 @@ import src
 
 DOMAIN = "fr"
 USE_API = False
-UPDATE_EVERY = 100
-NUM_ITEMS = 1000
+UPDATE_EVERY = 500
+NUM_ITEMS = 10000
 TOP_BRANDS_ALPHA = 0.3
-
-
-def update(
-    client: bigquery.Client,
-    index: data.index.Index,
-    unavailable_items: List[Tuple[str, str]],
-) -> bool:
-    success = False
-    current_time = datetime.now().isoformat()
-    item_ids_str = ", ".join([f"'{item_id}'" for item_id, _ in unavailable_items])
-
-    pinecone_points = src.bigquery.load_table(
-        client=client,
-        table=f"`{src.enums.DATASET_ID}.{src.enums.PINECONE_TABLE_ID}`",
-        conditions=[f"item_id in ({item_ids_str})"],
-        fields=["point_id"],
-        to_list=True,
-    )
-
-    pinecone_point_ids = [point["point_id"] for point in pinecone_points]
-    
-    if not src.pinecone.delete_points(index, pinecone_point_ids): 
-        pinecone_point_ids = []
-    
-    else:
-        try:
-            rows = [
-                {"vinted_id": vinted_id, "updated_at": current_time}
-                for _, vinted_id in unavailable_items
-            ]
-            errors = client.insert_rows_json(
-                table=f"{src.enums.DATASET_ID}.{src.enums.SOLD_TABLE_ID}",
-                json_rows=rows,
-            )
-            success = not errors
-        except:
-            success = False
-            pinecone_point_ids = []
-
-    return success, pinecone_point_ids
+SORT_BY_LIKES_ALPHA = 0.3
+JOB_PREFIX = "availability"
 
 
 def init_clients(
@@ -75,42 +37,38 @@ def init_clients(
     return bq_client, pinecone_index, vinted_client
 
 
-def get_data_loaders(
-    client: bigquery.Client,
-    shard_id: int,
-    total_shards: int,
-) -> Tuple[bigquery.table.RowIterator, bigquery.table.RowIterator, int]:
-    kwargs = {
-        "client": client,
-        "table": src.bigquery.BASE_QUERY,
-        "to_list": False,
-        "conditions": [
-            f"{src.enums.AVAILABLE_FIELD} = true",
-            f"MOD(FARM_FINGERPRINT(CAST({src.enums.VINTED_ID_FIELD} AS STRING)), {total_shards}) = {shard_id}",
-        ],
-    }
+def init_job_config(client: bigquery.Client) -> src.models.JobConfig:
+    only_top_brands = random.random() < TOP_BRANDS_ALPHA
+    sort_by_likes = random.random() < SORT_BY_LIKES_ALPHA
 
-    num_base_items = int(NUM_ITEMS * (1 - TOP_BRANDS_ALPHA))
-    base_loader = src.bigquery.load_table(limit=num_base_items, **kwargs)
-    top_brands_loader = None
+    if only_top_brands:
+        job_id = f"{JOB_PREFIX}_top_brands"
+    elif sort_by_likes:
+        job_id = f"{JOB_PREFIX}_likes"
+    else:
+        job_id = f"{JOB_PREFIX}_all"
 
-    if TOP_BRANDS_ALPHA > 0:
-        num_top_brands_items = NUM_ITEMS - num_base_items
-        top_brands_str = ", ".join(f'"{brand}"' for brand in src.enums.TOP_BRANDS)
-        kwargs["conditions"].append(f"brand IN ({top_brands_str})")
+    index = src.bigquery.get_job_index(client, job_id)
 
-        top_brands_loader = src.bigquery.load_table(
-            limit=num_top_brands_items,
-            **kwargs,
-        )
+    return src.models.JobConfig(
+        id=job_id,
+        index=index,
+        only_top_brands=only_top_brands,
+        sort_by_likes=sort_by_likes,
+    )
 
-    total_rows = base_loader.total_rows + (top_brands_loader.total_rows if top_brands_loader else 0)
-    return base_loader, top_brands_loader, total_rows
+
+def get_data_loader(
+    client: bigquery.Client, index: int, only_top_brands: bool
+) -> bigquery.table.RowIterator:
+    query = src.bigquery.query_active_items(NUM_ITEMS, index, only_top_brands)
+
+    return src.bigquery.run_query(client, query, to_list=False)
 
 
 def process_item(
     client: src.vinted.client.Vinted, row: bigquery.Row
-) -> Tuple[bool, Optional[Tuple[str, str]]]:
+) -> Tuple[bool, str, str]:
     try:
         is_available = src.status.is_available(
             client=client,
@@ -120,57 +78,96 @@ def process_item(
         )
 
         if is_available is None:
-            return False, None
+            return False, None, None
 
         if is_available is False:
-            return True, (row.id, row.vinted_id)
+            return True, row.id, row.vinted_id
 
-        return True, None
+        return True, None, None
 
     except Exception:
-        return False, None
+        return False, None, None
+
+
+def check_update(item_ids: List[str], vinted_ids: List[str]) -> bool:
+    return item_ids and len(item_ids) == len(vinted_ids)
+
+
+def update(
+    client: bigquery.Client,
+    index: data.index.Index,
+    item_ids: List[str],
+    vinted_ids: List[str],
+) -> bool:
+    success = False
+    current_time = datetime.now().isoformat()
+
+    pinecone_points_query = src.bigquery.query_pinecone_points(item_ids)
+    pinecone_points = src.bigquery.run_query(
+        client, pinecone_points_query, to_list=False
+    )
+    pinecone_point_ids = [row.point_id for row in pinecone_points]
+
+    if not src.pinecone.delete_points(index, pinecone_point_ids):
+        pinecone_point_ids = []
+    else:
+        try:
+            rows = []
+
+            for vinted_id in vinted_ids:
+                rows.append({"vinted_id": vinted_id, "updated_at": current_time})
+
+            errors = client.insert_rows_json(
+                table=f"{src.enums.DATASET_ID}.{src.enums.SOLD_TABLE_ID}",
+                json_rows=rows,
+            )
+            success = not errors
+        except:
+            success = False
+            pinecone_point_ids = []
+
+    return success, pinecone_point_ids
 
 
 def main() -> None:
     secrets = json.loads(os.getenv("SECRETS_JSON"))
-    shard_id = int(os.getenv("SHARD_ID", "0"))
-    total_shards = int(os.getenv("TOTAL_SHARDS", "1"))
-
     bq_client, pinecone_index, vinted_client = init_clients(secrets, DOMAIN)
-    
-    base_loader, top_brands_loader, total_rows = get_data_loaders(
-        bq_client, shard_id, total_shards
-    )
-    if top_brands_loader:
-        combined_loader = itertools.chain(base_loader, top_brands_loader)
-    else:
-        combined_loader = base_loader
 
-    unavailable_items: List[Tuple[str, str]] = []
-    pinecone_point_ids: List[str] = []
+    config = init_job_config(bq_client)
+    loader = get_data_loader(bq_client, config.index, config.only_top_brands)
+
+    if loader.total_rows == 0:
+        config.index = 0
+        loader = get_data_loader(bq_client, config.index, config.only_top_brands)
+
+    item_ids, vinted_ids, pinecone_point_ids = [], [], []
     n = n_success = n_available = n_unavailable = n_updated = 0
-    loop = tqdm.tqdm(iterable=combined_loader, total=total_rows)
+    loop = tqdm.tqdm(iterable=loader, total=loader.total_rows)
 
     for row in loop:
         n += 1
-        success, item = process_item(vinted_client, row)
+        success, item_id, vinted_id = process_item(vinted_client, row)
 
         if success:
             n_success += 1
-            if item:
-                unavailable_items.append(item)
+
+            if item_id:
+                item_ids.append(item_id)
+                vinted_ids.append(vinted_id)
                 n_unavailable += 1
             else:
                 n_available += 1
 
-        if n % UPDATE_EVERY == 0 and unavailable_items:
+        if n % UPDATE_EVERY == 0 and check_update(item_ids, vinted_ids):
             success, pinecone_point_ids_ = update(
-                bq_client, pinecone_index, unavailable_items
+                bq_client, pinecone_index, item_ids, vinted_ids
             )
+
             if success:
-                n_updated += len(unavailable_items)
+                n_updated += len(item_ids)
                 pinecone_point_ids.extend(pinecone_point_ids_)
-            unavailable_items = []
+
+            item_ids, vinted_ids = [], []
 
         loop.set_description(
             f"Processed: {n} | "
@@ -181,15 +178,24 @@ def main() -> None:
             f"Updated: {n_updated}"
         )
 
-    if unavailable_items:
-        success, pinecone_point_ids_ = update(bq_client, unavailable_items)
-        if success:
-            n_updated += len(unavailable_items)
-            pinecone_point_ids.extend(pinecone_point_ids_)
+    if check_update(item_ids, vinted_ids):
+        success, pinecone_point_ids_ = update(
+            bq_client, pinecone_index, item_ids, vinted_ids
+        )
 
-    if pinecone_point_ids:
-        if src.pinecone.delete_points(pinecone_index, pinecone_point_ids):
-            print(f"Deleted {len(pinecone_point_ids)} points.")
+        if success:
+            n_updated += len(item_ids)
+
+        if pinecone_point_ids_:
+            if src.pinecone.delete_points(pinecone_index, pinecone_point_ids_):
+                pinecone_point_ids.extend(pinecone_point_ids_)
+
+    print(f"Deleted {len(pinecone_point_ids)} points.")
+
+    if src.bigquery.update_job_index(bq_client, config.id, config.index + 1):
+        print(f"Updated job index for {config.id} to {config.index+1}.")
+    else:
+        print(f"Failed to update job index for {config.id}.")
 
 
 if __name__ == "__main__":
