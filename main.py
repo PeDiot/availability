@@ -18,7 +18,6 @@ USE_API = False
 UPDATE_EVERY = 100
 NUM_ITEMS = 1000
 TOP_BRANDS_ALPHA = 0.3
-TOP_BRANDS_N = 200
 
 
 def update(
@@ -97,8 +96,7 @@ def get_data_loaders(
 
     if TOP_BRANDS_ALPHA > 0:
         num_top_brands_items = NUM_ITEMS - num_base_items
-        top_brands = src.bigquery.get_top_brands(client, TOP_BRANDS_N)
-        top_brands_str = ", ".join(f'"{brand}"' for brand in top_brands)
+        top_brands_str = ", ".join(f'"{brand}"' for brand in src.enums.TOP_BRANDS)
         kwargs["conditions"].append(f"brand IN ({top_brands_str})")
 
         top_brands_loader = src.bigquery.load_table(
