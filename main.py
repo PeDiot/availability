@@ -61,7 +61,12 @@ def init_job_config(client: bigquery.Client) -> src.models.JobConfig:
 def get_data_loader(
     client: bigquery.Client, index: int, only_top_brands: bool
 ) -> bigquery.table.RowIterator:
-    query = src.bigquery.query_active_items(NUM_ITEMS, index, only_top_brands)
+    query = src.bigquery.query_active_items(
+        n=NUM_ITEMS, 
+        job_prefix=JOB_PREFIX, 
+        index=index, 
+        only_top_brands=only_top_brands
+    )
 
     return src.bigquery.run_query(client, query, to_list=False)
 

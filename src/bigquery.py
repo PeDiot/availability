@@ -64,16 +64,17 @@ def update_job_index(client: bigquery.Client, job_id: str, index: int) -> bool:
         return False
 
 
-def query_active_items(n: int, index: int, only_top_brands: bool) -> str:
+def query_active_items(n: int, job_prefix: str, index: int, only_top_brands: bool) -> str:
     top_brands_str = ", ".join(f'"{brand}"' for brand in TOP_BRANDS)
 
     query = f"""
     SELECT * 
     FROM `{PROJECT_ID}.{DATASET_ID}.{ITEM_ACTIVE_TABLE_ID}`
+    WHERE job_prefix = '{job_prefix}'
     """
 
     if only_top_brands:
-        query += f" WHERE brand IN ({top_brands_str})"
+        query += f" AND brand IN ({top_brands_str})"
 
     query += f"LIMIT {n} OFFSET {index * n}"
 
