@@ -1,6 +1,4 @@
-from enum import Enum
-
-import requests
+import requests, time
 from bs4 import BeautifulSoup
 
 from .vinted.client import Vinted
@@ -9,18 +7,19 @@ from .enums import *
 from .models import ItemStatus
 
 
+SLEEP_TIME = 10
+
+
 def is_available(
     client: Vinted, item_id: int, item_url: str, use_api: bool
 ) -> bool | None:
     if use_api:
         item_status = _get_item_status_from_api(client, item_id)
-        print(item_status)
     else:
         item_status = ItemStatus.UNKNOWN
 
     if item_status == ItemStatus.UNKNOWN:
         item_status = _get_item_status_from_web(item_url)
-        print(item_status)
 
         if item_status == ItemStatus.AVAILABLE:
             return True
@@ -32,7 +31,11 @@ def is_available(
 
 def _get_item_status_from_api(client: Vinted, item_id: int) -> ItemStatus:
     try:
-        is_available = check_is_available(client, item_id)
+        is_available, status_code = check_is_available(client, item_id)
+        print(status_code, is_available)
+
+        if status_code == 429:
+            time.sleep(SLEEP_TIME) 
 
         if is_available is None:
             return ItemStatus.UNKNOWN
@@ -45,7 +48,11 @@ def _get_item_status_from_api(client: Vinted, item_id: int) -> ItemStatus:
 
 def _get_item_status_from_web(item_url: str) -> ItemStatus:
     response = requests.get(item_url, headers=REQUESTS_HEADERS)
-    print(response.status_code)
+    print(item_url, response.status_code)
+    
+    if response.status_code == 429:
+        time.sleep(SLEEP_TIME)
+        response = requests.get(item_url, headers=REQUESTS_HEADERS)
 
     if response.status_code == 404:
         return ItemStatus.NOT_FOUND

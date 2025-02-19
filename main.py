@@ -15,8 +15,8 @@ import src
 DOMAIN = "fr"
 USE_API = True
 JOB_PREFIX = "availability"
-UPDATE_EVERY = 500
-NUM_ITEMS = 10000
+UPDATE_EVERY = 100
+NUM_ITEMS = 1000
 TOP_BRANDS_ALPHA = 0.
 SORT_BY_LIKES_ALPHA = 0.
 SORT_BY_DATE_ALPHA = 0.
@@ -78,7 +78,6 @@ def get_data_loader(client: bigquery.Client, config: src.models.JobConfig) -> bi
 def process_item(
     client: src.vinted.client.Vinted, row: bigquery.Row
 ) -> Tuple[bool, str, str]:
-    print(row.url)
     try:
         is_available = src.status.is_available(
             client=client,
