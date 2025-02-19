@@ -202,7 +202,7 @@ def main() -> None:
 
     print(f"Deleted {len(pinecone_point_ids)} points.")
 
-    if src.bigquery.update_job_index(bq_client, config.id, config.index):
+    if src.bigquery.update_job_index(bq_client, config.id, config.index+1):
         print(f"Updated job index for {config.id} to {config.index}.")
     else:
         print(f"Failed to update job index for {config.id}.")
