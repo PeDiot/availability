@@ -65,12 +65,12 @@ def update_job_index(client: bigquery.Client, job_id: str, index: int) -> bool:
 
 
 def query_active_items(
-    n: int, 
-    job_prefix: str, 
-    index: int, 
-    only_top_brands: bool, 
-    sort_by_date: bool, 
-    sort_by_likes: bool
+    n: int,
+    job_prefix: str,
+    index: int,
+    only_top_brands: bool,
+    sort_by_date: bool,
+    sort_by_likes: bool,
 ) -> str:
     order_by_prefix = " ORDER BY"
     top_brands_str = ", ".join(f'"{brand}"' for brand in TOP_BRANDS)
@@ -87,7 +87,7 @@ def query_active_items(
     if sort_by_date:
         query += f"\nORDER BY created_at"
         order_by_prefix = " AND"
-    
+
     if sort_by_likes:
         query += f" {order_by_prefix} num_likes DESC"
 
