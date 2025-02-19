@@ -6,6 +6,7 @@ DEFAULT_STATUS = True
 
 def check_is_available(client: Vinted, item_id: int) -> bool:
     response = client.item_info(item_id)
+    print(response.status_code)
 
     if response.status_code == 404:
         return False

@@ -14,11 +14,13 @@ def is_available(
 ) -> bool | None:
     if use_api:
         item_status = _get_item_status_from_api(client, item_id)
+        print(item_status)
     else:
         item_status = ItemStatus.UNKNOWN
 
     if item_status == ItemStatus.UNKNOWN:
         item_status = _get_item_status_from_web(item_url)
+        print(item_status)
 
         if item_status == ItemStatus.AVAILABLE:
             return True
@@ -43,6 +45,7 @@ def _get_item_status_from_api(client: Vinted, item_id: int) -> ItemStatus:
 
 def _get_item_status_from_web(item_url: str) -> ItemStatus:
     response = requests.get(item_url, headers=REQUESTS_HEADERS)
+    print(response.status_code)
 
     if response.status_code == 404:
         return ItemStatus.NOT_FOUND
