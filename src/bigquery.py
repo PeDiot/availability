@@ -64,7 +64,14 @@ def update_job_index(client: bigquery.Client, job_id: str, index: int) -> bool:
         return False
 
 
-def query_active_items(n: int, job_prefix: str, index: int, only_top_brands: bool) -> str:
+def query_active_items(
+    n: int, 
+    job_prefix: str, 
+    index: int, 
+    only_top_brands: bool, 
+    sort_by_date: bool, 
+    sort_by_likes: bool
+) -> str:
     top_brands_str = ", ".join(f'"{brand}"' for brand in TOP_BRANDS)
 
     query = f"""
@@ -75,6 +82,11 @@ def query_active_items(n: int, job_prefix: str, index: int, only_top_brands: boo
 
     if only_top_brands:
         query += f" AND brand IN ({top_brands_str})"
+
+    if sort_by_date:
+        query += f" ORDER BY created_at"
+    elif sort_by_likes:
+        query += f" ORDER BY num_likes DESC"
 
     query += f"LIMIT {n} OFFSET {index * n}"
 

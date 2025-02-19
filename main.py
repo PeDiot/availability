@@ -13,12 +13,13 @@ import src
 
 
 DOMAIN = "fr"
-USE_API = False
+USE_API = True
+JOB_PREFIX = "availability"
 UPDATE_EVERY = 500
 NUM_ITEMS = 10000
 TOP_BRANDS_ALPHA = 0.3
 SORT_BY_LIKES_ALPHA = 0.3
-JOB_PREFIX = "availability"
+SORT_BY_DATE_ALPHA = 0.5
 
 
 def init_clients(
@@ -39,11 +40,13 @@ def init_clients(
 def init_job_config(client: bigquery.Client) -> src.models.JobConfig:
     only_top_brands = random.random() < TOP_BRANDS_ALPHA
     sort_by_likes = random.random() < SORT_BY_LIKES_ALPHA
-
+    sort_by_date = random.random() < SORT_BY_DATE_ALPHA
     if only_top_brands:
         job_id = f"{JOB_PREFIX}_top_brands"
     elif sort_by_likes:
         job_id = f"{JOB_PREFIX}_likes"
+    elif sort_by_date:
+        job_id = f"{JOB_PREFIX}_date"
     else:
         job_id = f"{JOB_PREFIX}_all"
 
@@ -54,17 +57,17 @@ def init_job_config(client: bigquery.Client) -> src.models.JobConfig:
         index=index,
         only_top_brands=only_top_brands,
         sort_by_likes=sort_by_likes,
+        sort_by_date=sort_by_date,
     )
 
 
-def get_data_loader(
-    client: bigquery.Client, index: int, only_top_brands: bool
-) -> bigquery.table.RowIterator:
+def get_data_loader(client: bigquery.Client, config: src.models.JobConfig) -> bigquery.table.RowIterator:
     query = src.bigquery.query_active_items(
         n=NUM_ITEMS, 
         job_prefix=JOB_PREFIX, 
-        index=index, 
-        only_top_brands=only_top_brands
+        index=config.index, 
+        only_top_brands=config.only_top_brands, 
+        sort_by_date=config.sort_by_date
     )
 
     return src.bigquery.run_query(client, query, to_list=False)

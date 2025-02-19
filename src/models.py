@@ -15,3 +15,4 @@ class JobConfig:
     index: int
     only_top_brands: bool
     sort_by_likes: bool
+    sort_by_date: bool
