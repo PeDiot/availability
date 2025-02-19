@@ -45,7 +45,7 @@ def get_job_index(client: bigquery.Client, job_id: str) -> int:
     result = client.query(query).result()
 
     for row in result:
-        return row.value
+        return row.value + 1
 
     return 0
 
