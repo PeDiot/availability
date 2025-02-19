@@ -150,6 +150,11 @@ def main() -> None:
         config.index = 0
         loader = get_data_loader(bq_client, config.index, config.only_top_brands)
 
+    if src.bigquery.update_job_index(bq_client, config.id, config.index+1):
+        print(f"Updated job index for {config.id} to {config.index}.")
+    else:
+        print(f"Failed to update job index for {config.id}.")
+
     item_ids, vinted_ids, pinecone_point_ids = [], [], []
     n = n_success = n_available = n_unavailable = n_updated = 0
     loop = tqdm.tqdm(iterable=loader, total=loader.total_rows)
@@ -201,11 +206,6 @@ def main() -> None:
                 pinecone_point_ids.extend(pinecone_point_ids_)
 
     print(f"Deleted {len(pinecone_point_ids)} points.")
-
-    if src.bigquery.update_job_index(bq_client, config.id, config.index+1):
-        print(f"Updated job index for {config.id} to {config.index}.")
-    else:
-        print(f"Failed to update job index for {config.id}.")
 
 
 if __name__ == "__main__":
