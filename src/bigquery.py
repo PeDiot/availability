@@ -72,6 +72,7 @@ def query_active_items(
     sort_by_date: bool, 
     sort_by_likes: bool
 ) -> str:
+    order_by_prefix = " ORDER BY"
     top_brands_str = ", ".join(f'"{brand}"' for brand in TOP_BRANDS)
 
     query = f"""
@@ -84,11 +85,13 @@ def query_active_items(
         query += f" AND brand IN ({top_brands_str})"
 
     if sort_by_date:
-        query += f" ORDER BY created_at"
-    elif sort_by_likes:
-        query += f" ORDER BY num_likes DESC"
+        query += f"\nORDER BY created_at"
+        order_by_prefix = " AND"
+    
+    if sort_by_likes:
+        query += f" {order_by_prefix} num_likes DESC"
 
-    query += f"LIMIT {n} OFFSET {index * n}"
+    query += f"\nLIMIT {n} OFFSET {index * n}"
 
     return query
 

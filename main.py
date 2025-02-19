@@ -13,7 +13,7 @@ import src
 
 
 DOMAIN = "fr"
-USE_API = True
+USE_API = False
 JOB_PREFIX = "availability"
 UPDATE_EVERY = 500
 NUM_ITEMS = 10000
@@ -41,6 +41,7 @@ def init_job_config(client: bigquery.Client) -> src.models.JobConfig:
     only_top_brands = random.random() < TOP_BRANDS_ALPHA
     sort_by_likes = random.random() < SORT_BY_LIKES_ALPHA
     sort_by_date = random.random() < SORT_BY_DATE_ALPHA
+    
     if only_top_brands:
         job_id = f"{JOB_PREFIX}_top_brands"
     elif sort_by_likes:
@@ -67,7 +68,8 @@ def get_data_loader(client: bigquery.Client, config: src.models.JobConfig) -> bi
         job_prefix=JOB_PREFIX, 
         index=config.index, 
         only_top_brands=config.only_top_brands, 
-        sort_by_date=config.sort_by_date
+        sort_by_date=config.sort_by_date, 
+        sort_by_likes=config.sort_by_likes
     )
 
     return src.bigquery.run_query(client, query, to_list=False)
@@ -141,7 +143,8 @@ def main() -> None:
     bq_client, pinecone_index, vinted_client = init_clients(secrets, DOMAIN)
 
     config = init_job_config(bq_client)
-    loader = get_data_loader(bq_client, config.index, config.only_top_brands)
+    print(config)
+    loader = get_data_loader(bq_client, config)
 
     if loader.total_rows == 0:
         config.index = 0
