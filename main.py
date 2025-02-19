@@ -148,7 +148,7 @@ def main() -> None:
 
     if loader.total_rows == 0:
         config.index = 0
-        loader = get_data_loader(bq_client, config.index, config.only_top_brands)
+        loader = get_data_loader(bq_client, config)
 
     if src.bigquery.update_job_index(bq_client, config.id, config.index+1):
         print(f"Updated job index for {config.id} to {config.index}.")
