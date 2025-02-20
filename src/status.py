@@ -32,7 +32,6 @@ def is_available(
 def _get_item_status_from_api(client: Vinted, item_id: int) -> ItemStatus:
     try:
         is_available, status_code = check_is_available(client, item_id)
-        print("api", is_available, status_code)
 
         if status_code == 429:
             time.sleep(SLEEP_TIME)
@@ -48,7 +47,6 @@ def _get_item_status_from_api(client: Vinted, item_id: int) -> ItemStatus:
 
 def _get_item_status_from_web(item_url: str) -> ItemStatus:
     response = requests.get(item_url, headers=REQUESTS_HEADERS)
-    print(response.status_code)
 
     if response.status_code == 429:
         time.sleep(SLEEP_TIME)
@@ -58,7 +56,6 @@ def _get_item_status_from_web(item_url: str) -> ItemStatus:
         return ItemStatus.NOT_FOUND
 
     if response.url != item_url:
-        print("url", response.url, item_url)
         return ItemStatus.NOT_FOUND
 
     try:
