@@ -48,6 +48,7 @@ def _get_item_status_from_api(client: Vinted, item_id: int) -> ItemStatus:
 
 def _get_item_status_from_web(item_url: str) -> ItemStatus:
     response = requests.get(item_url, headers=REQUESTS_HEADERS)
+    print(response.status_code)
 
     if response.status_code == 429:
         time.sleep(SLEEP_TIME)
