@@ -16,8 +16,7 @@ import src
 
 DOMAIN = "fr"
 USE_API = False
-JOB_PREFIX = "availability"
-NUM_ITEMS = 1000
+NUM_ITEMS = 10000
 DRIVER_SLEEP_EVERY = 200
 UPDATE_EVERY = 200
 TOP_BRANDS_ALPHA = 0.0
@@ -53,13 +52,13 @@ def init_job_config(client: bigquery.Client) -> src.models.JobConfig:
     sort_by_date = random.random() < SORT_BY_DATE_ALPHA
 
     if only_top_brands:
-        job_id = f"{JOB_PREFIX}_top_brands"
+        job_id = "top_brands"
     elif sort_by_likes:
-        job_id = f"{JOB_PREFIX}_likes"
+        job_id = "likes"
     elif sort_by_date:
-        job_id = f"{JOB_PREFIX}_date"
+        job_id = "date"
     else:
-        job_id = f"{JOB_PREFIX}_all"
+        job_id = "all"
 
     index = src.bigquery.get_job_index(client, job_id)
 
@@ -77,7 +76,6 @@ def get_data_loader(
 ) -> bigquery.table.RowIterator:
     query = src.bigquery.query_active_items(
         n=NUM_ITEMS,
-        job_prefix=JOB_PREFIX,
         index=config.index,
         only_top_brands=config.only_top_brands,
         sort_by_date=config.sort_by_date,

@@ -66,28 +66,20 @@ def update_job_index(client: bigquery.Client, job_id: str, index: int) -> bool:
 
 def query_active_items(
     n: int,
-    job_prefix: str,
     index: int,
     only_top_brands: bool,
     sort_by_date: bool,
     sort_by_likes: bool,
 ) -> str:
     order_by_prefix = " ORDER BY"
-    top_brands_str = ", ".join(f'"{brand}"' for brand in TOP_BRANDS)
 
     query = f"""
-    WITH 
-    ranked AS (
-    SELECT *, ROW_NUMBER() OVER (PARTITION BY vinted_id ORDER BY vinted_id DESC) AS rn
+    SELECT *
     FROM `{PROJECT_ID}.{DATASET_ID}.{ITEM_ACTIVE_TABLE_ID}`
-    WHERE job_prefix = '{job_prefix}'
-    )
-    SELECT * EXCEPT (rn)
-    FROM ranked
-    WHERE rn = 1
     """
 
     if only_top_brands:
+        top_brands_str = ", ".join(f'"{brand}"' for brand in TOP_BRANDS)
         query += f" AND brand IN ({top_brands_str})"
 
     if sort_by_date:
