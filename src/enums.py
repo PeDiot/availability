@@ -26,9 +26,7 @@ SOLD_CONTAINER_ATTRS = {"data-testid": "item-status--content"}
 SOLD_STATUS_CONTENT = "Vendu"
 
 NOT_FOUND_CONTAINER_TYPE = "h1"
-NOT_FOUND_CONTAINER_ATTRS = {
-    "class": "web_ui__Text__text web_ui__Text__heading web_ui__Text__center"
-}
+NOT_FOUND_CONTAINER_CLASS = "web_ui__Text__text web_ui__Text__heading web_ui__Text__center"
 NOT_FOUND_STATUS_CONTENT = "La page n'existe pas"
 
 TOP_BRANDS = [
