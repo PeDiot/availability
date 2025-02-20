@@ -13,7 +13,7 @@ import src
 
 
 DOMAIN = "fr"
-USE_API = False
+USE_API = True
 JOB_PREFIX = "availability"
 UPDATE_EVERY = 100
 NUM_ITEMS = 1000
@@ -152,10 +152,10 @@ def main() -> None:
         config.index = 0
         loader = get_data_loader(bq_client, config)
 
-    if src.bigquery.update_job_index(bq_client, config.id, config.index + 1):
-        print(f"Updated job index for {config.id} to {config.index}.")
-    else:
-        print(f"Failed to update job index for {config.id}.")
+    # if src.bigquery.update_job_index(bq_client, config.id, config.index + 1):
+    #     print(f"Updated job index for {config.id} to {config.index+1}.")
+    # else:
+    #     print(f"Failed to update job index for {config.id}.")
 
     item_ids, vinted_ids, pinecone_point_ids = [], [], []
     n = n_success = n_available = n_unavailable = n_updated = 0
