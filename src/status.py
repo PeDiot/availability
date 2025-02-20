@@ -22,7 +22,9 @@ def is_available(item_status: ItemStatus) -> bool | None:
         return
 
 
-def get_item_status_from_web(item_url: str, driver: Optional[WebDriver] = None) -> ItemStatus:
+def get_item_status_from_web(
+    item_url: str, driver: Optional[WebDriver] = None
+) -> ItemStatus:
     if driver:
         return _get_status_using_selenium(driver, item_url)
     return _get_status_using_requests(item_url)
@@ -46,9 +48,7 @@ def get_item_status_from_api(client: Vinted, item_id: int) -> ItemStatus:
 
 def _get_status_using_selenium(driver: WebDriver, item_url: str) -> ItemStatus:
     driver.get(item_url)
-    if driver.current_url != item_url:
-        return ItemStatus.NOT_FOUND
-    
+
     try:
         return _get_item_status(driver.page_source)
     except Exception:
@@ -58,14 +58,14 @@ def _get_status_using_selenium(driver: WebDriver, item_url: str) -> ItemStatus:
 def _get_status_using_requests(item_url: str) -> ItemStatus:
     response = requests.get(item_url, headers=REQUESTS_HEADERS)
     status_code = response.status_code
-    
+
     if status_code == 429:
         time.sleep(SLEEP_TIME)
         response = requests.get(item_url, headers=REQUESTS_HEADERS)
-        
+
     if status_code == 404:
         return ItemStatus.NOT_FOUND
-        
+
     if response.url != item_url:
         return ItemStatus.NOT_FOUND
 
@@ -78,10 +78,10 @@ def _get_status_using_requests(item_url: str) -> ItemStatus:
 def _get_item_status(raw_content: str) -> ItemStatus:
     try:
         soup = BeautifulSoup(raw_content, BS4_PARSER)
-        
+
         if _extract_sold_component(soup):
             return ItemStatus.SOLD
-        
+
         if _extract_not_found_component(soup):
             return ItemStatus.NOT_FOUND
 
@@ -93,10 +93,7 @@ def _get_item_status(raw_content: str) -> ItemStatus:
 
 def _extract_not_found_component(soup: BeautifulSoup) -> bool:
     try:
-        heading = soup.find(
-            "h1",
-            class_=NOT_FOUND_CONTAINER_CLASS
-        )
+        heading = soup.find("h1", class_=NOT_FOUND_CONTAINER_CLASS)
         return bool(heading and heading.text.strip() == NOT_FOUND_STATUS_CONTENT)
     except Exception:
         return False

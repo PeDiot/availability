@@ -4,7 +4,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.webdriver import WebDriver
 
 
-def init_webdriver(headless: bool = False) -> WebDriver:
+def init_webdriver(headless: bool = True) -> WebDriver:
     chrome_options = Options()
     chrome_options.add_argument("--disable-search-engine-choice-screen")
     chrome_options.add_argument(
@@ -15,12 +15,8 @@ def init_webdriver(headless: bool = False) -> WebDriver:
 
     if headless:
         chrome_options.add_argument("--headless")
-        chrome_options.add_argument(
-            "--disable-gpu"
-        )
-        chrome_options.add_argument(
-            "--no-sandbox"
-        )
+        chrome_options.add_argument("--disable-gpu")
+        chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")  # Avoid /dev/shm issues
 
     driver = Chrome(options=chrome_options)

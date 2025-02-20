@@ -6,6 +6,7 @@ from typing import List, Tuple, Optional
 
 import tqdm, json, os, random
 from datetime import datetime
+
 from pinecone import Pinecone, data
 from google.cloud import bigquery
 from selenium.webdriver.chrome.webdriver import WebDriver
@@ -18,7 +19,7 @@ USE_API = False
 JOB_PREFIX = "availability"
 NUM_ITEMS = 1000
 DRIVER_SLEEP_EVERY = 200
-UPDATE_EVERY = 100
+UPDATE_EVERY = 50
 TOP_BRANDS_ALPHA = 0.0
 SORT_BY_LIKES_ALPHA = 0.0
 SORT_BY_DATE_ALPHA = 0.0
@@ -26,7 +27,9 @@ SORT_BY_DATE_ALPHA = 0.0
 
 def init_clients(
     secrets: dict,
-) -> Tuple[bigquery.Client, Pinecone, Optional[src.vinted.client.Vinted], Optional[WebDriver]]:
+) -> Tuple[
+    bigquery.Client, Pinecone, Optional[src.vinted.client.Vinted], Optional[WebDriver]
+]:
     gcp_credentials = secrets.get("GCP_CREDENTIALS")
     gcp_credentials["private_key"] = gcp_credentials["private_key"].replace("\\n", "\n")
     bq_client = src.bigquery.init_client(credentials_dict=gcp_credentials)
@@ -38,7 +41,7 @@ def init_clients(
         vinted_client = src.vinted.client.Vinted(domain=DOMAIN)
         driver = None
     else:
-        driver = src.driver.init_webdriver(headless=False)
+        driver = src.driver.init_webdriver()
         vinted_client = None
 
     return bq_client, pinecone_index, vinted_client, driver
@@ -86,25 +89,35 @@ def get_data_loader(
 
 def process_item(
     row: bigquery.Row,
-    client: Optional[src.vinted.client.Vinted] = None,
-    driver: Optional[WebDriver] = None,
-) -> Tuple[bool, str, str]:
-    try:
-        if client:
-            status = src.status.get_item_status_from_api(client, int(row.vinted_id))
-        else:
-            status = src.status.get_item_status_from_web(row.url, driver)
+    client: src.vinted.client.Vinted,
+    driver: WebDriver,
+    vinted_ids: List[str],
+    item_ids: List[str],
+    n_available: int,
+    n_unavailable: int,
+    n_success: int,
+) -> Tuple[List[str], List[str], int, int, int, bool]:
+    restart_driver = False
+    status = src.status.get_item_status_from_web(row.url, driver)
 
-        is_available = src.status.is_available(status)
-        success = is_available is not None
+    if status == src.models.ItemStatus.NOT_FOUND:
+        status = src.status.get_item_status_from_api(client, int(row.vinted_id))
+        restart_driver = True
 
-        if is_available is False:
-            return True, row.id, row.vinted_id
-        else:
-            return success, None, None
+    is_available = src.status.is_available(status)
 
-    except Exception:
-        return False, None, None
+    if is_available is None:
+        pass
+    elif is_available:
+        n_available += 1
+        n_success += 1
+    else:
+        n_unavailable += 1
+        n_success += 1
+        item_ids.append(row.id)
+        vinted_ids.append(row.vinted_id)
+
+    return vinted_ids, item_ids, n_available, n_unavailable, n_success, restart_driver
 
 
 def check_update(item_ids: List[str], vinted_ids: List[str]) -> bool:
@@ -159,39 +172,40 @@ def main() -> None:
         config.index = 0
         loader = get_data_loader(bq_client, config)
 
-    # if src.bigquery.update_job_index(bq_client, config.id, config.index + 1):
-    #     print(f"Updated job index for {config.id} to {config.index+1}.")
-    # else:
-    #     print(f"Failed to update job index for {config.id}.")
+    if src.bigquery.update_job_index(bq_client, config.id, config.index + 1):
+        print(f"Updated job index for {config.id} to {config.index+1}.")
+    else:
+        print(f"Failed to update job index for {config.id}.")
 
     item_ids, vinted_ids, pinecone_point_ids = [], [], []
-    n = n_success = n_available = n_unavailable = n_updated = 0
+    n, n_success, n_available, n_unavailable, n_updated = 0, 0, 0, 0, 0
     loop = tqdm.tqdm(iterable=loader, total=loader.total_rows)
 
     for row in loop:
         n += 1
 
-        if driver and n % DRIVER_SLEEP_EVERY == 0:
+        (
+            vinted_ids,
+            item_ids,
+            n_available,
+            n_unavailable,
+            n_success,
+            restart_driver,
+        ) = process_item(
+            row,
+            vinted_client,
+            driver,
+            vinted_ids,
+            item_ids,
+            n_available,
+            n_unavailable,
+            n_success,
+        )
+
+        if (driver and n % DRIVER_SLEEP_EVERY == 0) or restart_driver:
             driver.quit()
-            driver = src.driver.init_webdriver(headless=False)
+            driver = src.driver.init_webdriver()
             src.driver.gaussian_sleep(driver)
-
-        success, item_id, vinted_id = process_item(row, vinted_client, driver)
-
-        if driver and not success:
-            driver.quit()
-            driver = src.driver.init_webdriver(headless=False)
-            src.driver.gaussian_sleep(driver)
-
-        if success:
-            n_success += 1
-
-            if item_id:
-                item_ids.append(item_id)
-                vinted_ids.append(vinted_id)
-                n_unavailable += 1
-            else:
-                n_available += 1
 
         if n % UPDATE_EVERY == 0 and check_update(item_ids, vinted_ids):
             success, pinecone_point_ids_ = update(
