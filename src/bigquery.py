@@ -76,9 +76,15 @@ def query_active_items(
     top_brands_str = ", ".join(f'"{brand}"' for brand in TOP_BRANDS)
 
     query = f"""
-    SELECT * 
+    WITH 
+    ranked AS (
+    SELECT *, ROW_NUMBER() OVER (PARTITION BY vinted_id ORDER BY vinted_id DESC) AS rn
     FROM `{PROJECT_ID}.{DATASET_ID}.{ITEM_ACTIVE_TABLE_ID}`
     WHERE job_prefix = '{job_prefix}'
+    )
+    SELECT * EXCEPT (rn)
+    FROM ranked
+    WHERE rn = 1
     """
 
     if only_top_brands:
