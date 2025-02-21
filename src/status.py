@@ -47,10 +47,10 @@ def get_item_status_from_api(client: Vinted, item_id: int) -> ItemStatus:
 
 
 def _get_status_using_selenium(driver: WebDriver, item_url: str) -> ItemStatus:
-    driver.get(item_url)
-
     try:
+        driver.get(item_url)
         return _get_item_status(driver.page_source)
+    
     except Exception:
         return ItemStatus.UNKNOWN
 

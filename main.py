@@ -17,7 +17,7 @@ import src
 DOMAIN = "fr"
 USE_API = False
 NUM_ITEMS = 10000
-DRIVER_RESTART_EVERY = 1000
+DRIVER_RESTART_EVERY = 500
 UPDATE_EVERY = 200
 TOP_BRANDS_ALPHA = .5
 SORT_BY_LIKES_ALPHA = 0.0
@@ -98,7 +98,7 @@ def process_item(
     restart_driver = False
     status = src.status.get_item_status_from_web(row.url, driver)
 
-    if status == src.models.ItemStatus.NOT_FOUND:
+    if status in [src.models.ItemStatus.NOT_FOUND, src.models.ItemStatus.UNKNOWN]:
         status = src.status.get_item_status_from_api(client, int(row.vinted_id))
         restart_driver = True
 
