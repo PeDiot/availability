@@ -17,7 +17,7 @@ import src
 DOMAIN = "fr"
 USE_API = False
 NUM_ITEMS = 10000
-DRIVER_SLEEP_EVERY = 200
+DRIVER_RESTART_EVERY = 1000
 UPDATE_EVERY = 200
 TOP_BRANDS_ALPHA = .3
 SORT_BY_LIKES_ALPHA = 0.0
@@ -200,7 +200,7 @@ def main() -> None:
             n_success,
         )
 
-        if (driver and n % DRIVER_SLEEP_EVERY == 0) or restart_driver:
+        if (driver and n % DRIVER_RESTART_EVERY == 0) or restart_driver:
             driver.quit()
             driver = src.driver.init_webdriver()
             src.driver.gaussian_sleep(driver)
