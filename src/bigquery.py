@@ -80,7 +80,7 @@ def query_active_items(
 
     if only_top_brands:
         top_brands_str = ", ".join(f'"{brand}"' for brand in TOP_BRANDS)
-        query += f" AND brand IN ({top_brands_str})"
+        query += f"\nWHERE brand IN ({top_brands_str})"
 
     if sort_by_date:
         query += f"\nORDER BY created_at"
