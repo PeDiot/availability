@@ -9,6 +9,7 @@ import src
 
 BATCH_SIZE = 200
 NUM_NEIGHBORS = 20
+SHUFFLE = True
 
 
 def init_runner() -> src.runner.Runner:
@@ -25,7 +26,7 @@ def init_runner() -> src.runner.Runner:
 
 
 def load_point_ids(runner: src.runner.Runner) -> List[List[Dict]]:
-    query = src.bigquery.query_user_interactions()
+    query = src.bigquery.query_user_interactions(shuffle=SHUFFLE)
     loader = src.bigquery.run_query(client=runner.bq_client, query=query, to_list=False)
 
     return src.bigquery.create_batches(loader, BATCH_SIZE)

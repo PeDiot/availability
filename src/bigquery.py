@@ -114,8 +114,8 @@ def query_pinecone_points(item_ids: List[int]) -> str:
     """
 
 
-def query_user_interactions() -> str:
-    return f"""
+def query_user_interactions(shuffle: bool = False) -> str:
+    query = f"""
     SELECT DISTINCT p.point_id
     FROM `{PROJECT_ID}.{VINTED_DATASET_ID}.{ITEM_ACTIVE_TABLE_ID}` AS i
     LEFT JOIN (
@@ -127,6 +127,11 @@ def query_user_interactions() -> str:
     LEFT JOIN `{PROJECT_ID}.{VINTED_DATASET_ID}.{SOLD_TABLE_ID}` AS s USING (vinted_id)
     WHERE interactions.item_id IS NOT NULL AND s.vinted_id IS NULL
     """
+
+    if shuffle:
+        query += "\nORDER BY RAND()"
+
+    return query
 
 
 def create_batches(loader: bigquery.table.RowIterator, batch_size: int) -> List[List[bigquery.table.Row]]:
