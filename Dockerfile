@@ -42,13 +42,11 @@ RUN CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d'.' -f1)
     && rm -rf chromedriver-linux64.zip chromedriver-linux64
 
 COPY src/ /app/src/
-COPY runners/ /app/runners/
-COPY main.py .
+COPY runners/*.py /app/runners/
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Use environment variable to determine which script to run
 ENV FROM_INTERACTIONS=false
 ENTRYPOINT ["sh", "-c", "python3 runners/$([ \"$FROM_INTERACTIONS\" = true ] && echo 'from_interactions.py' || echo 'all.py')"]
-CMD [] 
+CMD []
