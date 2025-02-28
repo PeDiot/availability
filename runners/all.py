@@ -1,5 +1,5 @@
 import sys
-sys.path.append("../")
+sys.path.append("/app")
 
 from google.cloud import bigquery
 import json, os
