@@ -7,7 +7,7 @@ import json, os
 import src
 
 
-NUM_ITEMS = 10000
+NUM_ITEMS = 100000
 TOP_BRANDS_ALPHA = .5
 SORT_BY_LIKES_ALPHA = 0.0
 SORT_BY_DATE_ALPHA = 0.0
@@ -45,13 +45,5 @@ def get_loader(client: bigquery.Client, config: src.models.JobConfig) -> bigquer
 
 if __name__ == "__main__":
     runner = init_runner()
-    data_loader= get_loader(runner.bq_client, runner.config)
-    
-    if src.bigquery.update_job_index(
-        runner.bq_client, 
-        runner.config.id, 
-        runner.config.index + 1
-    ):
-        print(f"Updated job index for {runner.config.id} to {runner.config.index+1}.")
-        
-    runner.run(data_loader) 
+    data_loader= get_loader(runner.bq_client, runner.config)         
+    runner.run(data_loader)
