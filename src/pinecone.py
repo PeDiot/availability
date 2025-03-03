@@ -1,5 +1,7 @@
-from typing import List, Dict, Optional
-from pinecone.data.index import Index
+from typing import List, Optional
+
+from pinecone.data.index import Index, ScoredVector
+from .models import PineconeEntry, PineconeDataLoader
 
 
 BATCH_SIZE = 1000
@@ -20,21 +22,30 @@ def delete_points(index: Index, ids: List[str]) -> bool:
         return False
 
 
-def get_neighbors(index: Index, point_ids: List[str], n: int) -> Optional[List[Dict]]:
-    points = []
+def get_vectors(index: Index, point_ids: List[str]) -> List[ScoredVector]:
     response = index.fetch(ids=point_ids)
-    
-    if not response.vectors:
-        return
-        
-    for vector in response.vectors.values():
+
+    return response.vectors.values()
+
+
+def get_neighbors(
+    index: Index, vectors: List[ScoredVector], n: int
+) -> PineconeDataLoader:
+    loader = PineconeDataLoader()
+
+    for vector in vectors:
         results = index.query(
             vector=vector.values,
             top_k=n,
             include_values=False,
             include_metadata=True,
         )
-        
-        points.extend(results.matches)
- 
-    return points
+
+        for vector in results.matches:
+            try:
+                entry = PineconeEntry.from_vector(vector)
+                loader.add(entry)
+            except:
+                pass
+
+    return loader

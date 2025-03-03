@@ -18,7 +18,7 @@ def is_available(item_status: ItemStatus) -> bool | None:
         return True
     else:
         return False
-    
+
 
 def get_item_status_from_web(
     item_url: str, driver: Optional[WebDriver] = None
@@ -48,7 +48,7 @@ def _get_status_using_selenium(driver: WebDriver, item_url: str) -> ItemStatus:
     try:
         driver.get(item_url)
         return _get_item_status(driver.page_source)
-    
+
     except Exception:
         return ItemStatus.UNKNOWN
 

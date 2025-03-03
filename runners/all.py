@@ -1,4 +1,5 @@
 import sys
+
 sys.path.append("/app")
 
 from google.cloud import bigquery
@@ -8,23 +9,25 @@ import src
 
 
 NUM_ITEMS = 100000
-TOP_BRANDS_ALPHA = .5
+TOP_BRANDS_ALPHA = 0.5
 SORT_BY_LIKES_ALPHA = 0.0
 SORT_BY_DATE_ALPHA = 0.0
 
 
 def init_runner() -> src.runner.Runner:
     secrets = json.loads(os.getenv("SECRETS_JSON"))
-    
+
     return src.runner.Runner(
-        secrets=secrets, 
-        use_api=False, 
+        secrets=secrets,
+        use_api=False,
         from_interactions=False,
-        top_brands_alpha=TOP_BRANDS_ALPHA
+        top_brands_alpha=TOP_BRANDS_ALPHA,
     )
 
 
-def get_loader(client: bigquery.Client, config: src.models.JobConfig) -> bigquery.table.RowIterator:
+def get_loader(
+    client: bigquery.Client, config: src.models.JobConfig
+) -> bigquery.table.RowIterator:
     query_kwargs = {
         "n": NUM_ITEMS,
         "only_top_brands": config.only_top_brands,
@@ -45,12 +48,10 @@ def get_loader(client: bigquery.Client, config: src.models.JobConfig) -> bigquer
 
 if __name__ == "__main__":
     runner = init_runner()
-    data_loader= get_loader(runner.bq_client, runner.config)       
+    data_loader = get_loader(runner.bq_client, runner.config)
 
     if src.bigquery.update_job_index(
-        runner.bq_client, 
-        runner.config.id, 
-        runner.config.index + 1
+        runner.bq_client, runner.config.id, runner.config.index + 1
     ):
         print(f"Updated job index for {runner.config.id} to {runner.config.index+1}.")
 

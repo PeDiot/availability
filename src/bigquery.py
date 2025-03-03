@@ -6,8 +6,10 @@ from .enums import *
 
 
 def init_client(credentials_dict: Dict) -> bigquery.Client:
-    credentials_dict["private_key"] = credentials_dict["private_key"].replace("\\n", "\n")
-    
+    credentials_dict["private_key"] = credentials_dict["private_key"].replace(
+        "\\n", "\n"
+    )
+
     credentials = service_account.Credentials.from_service_account_info(
         credentials_dict
     )
@@ -82,7 +84,7 @@ def query_items(
     FROM `{PROJECT_ID}.{VINTED_DATASET_ID}.{ITEM_ACTIVE_TABLE_ID}`
     """
 
-    if item_ids: 
+    if item_ids:
         item_ids_str = ", ".join(f"'{item_id}'" for item_id in item_ids)
         query += f"{where_prefix} id IN ({item_ids_str})"
         where_prefix = " AND"
@@ -115,9 +117,7 @@ def query_pinecone_points(item_ids: List[int]) -> str:
 
 
 def query_user_interactions(
-    n: Optional[int] = None, 
-    index: Optional[int] = None, 
-    shuffle: bool = False
+    n: Optional[int] = None, index: Optional[int] = None, shuffle: bool = False
 ) -> str:
     query = f"""
     SELECT DISTINCT p.point_id
@@ -133,7 +133,7 @@ def query_user_interactions(
     WHERE interactions.item_id IS NOT NULL
     """
 
-    if n and index:
+    if n and index is not None:
         query += f"\nLIMIT {n} OFFSET {index * n}"
 
     if shuffle:
@@ -142,7 +142,9 @@ def query_user_interactions(
     return query
 
 
-def create_batches(loader: bigquery.table.RowIterator, batch_size: int) -> List[List[bigquery.table.Row]]:
+def create_batches(
+    loader: bigquery.table.RowIterator, batch_size: int
+) -> List[List[bigquery.table.Row]]:
     batches, current_batch = [], []
 
     for row in loader:
