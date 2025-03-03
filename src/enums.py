@@ -8,6 +8,7 @@ SOLD_TABLE_ID = "sold"
 PINECONE_TABLE_ID = "pinecone"
 CLICK_OUT_TABLE_ID = "click_out"
 SAVED_TABLE_ID = "saved"
+VIEWED_ITEMS_TABLE_ID = "items"
 
 VINTED_ID_FIELD = "vinted_id"
 AVAILABLE_FIELD = "is_available"

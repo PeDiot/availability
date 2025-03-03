@@ -152,8 +152,8 @@ class Runner:
 
         if status in [src.models.ItemStatus.NOT_FOUND, src.models.ItemStatus.UNKNOWN]:
             status = src.status.get_item_status_from_api(self.vinted_client, int(row.vinted_id))
-            restart_driver = True
-
+            
+        restart_driver = status == src.models.ItemStatus.UNKNOWN
         is_available = src.status.is_available(status)
 
         if is_available is None:
