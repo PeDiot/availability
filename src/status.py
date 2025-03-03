@@ -16,11 +16,9 @@ SLEEP_TIME = 10
 def is_available(item_status: ItemStatus) -> bool | None:
     if item_status == ItemStatus.AVAILABLE:
         return True
-    elif item_status in [ItemStatus.SOLD, ItemStatus.NOT_FOUND]:
-        return False
     else:
-        return
-
+        return False
+    
 
 def get_item_status_from_web(
     item_url: str, driver: Optional[WebDriver] = None

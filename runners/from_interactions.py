@@ -1,15 +1,15 @@
 import sys
-sys.path.append("/app")
+sys.path.append("../")
 
-from typing import List, Dict
+from typing import List
 import json, os
+from google.cloud import bigquery
 
 import src
 
 
-BATCH_SIZE = 200
-NUM_NEIGHBORS = 20
-SHUFFLE = True
+NUM_ITEMS = 300
+NUM_NEIGHBORS = 30
 
 
 def init_runner() -> src.runner.Runner:
@@ -25,14 +25,26 @@ def init_runner() -> src.runner.Runner:
     )
 
 
-def load_point_ids(runner: src.runner.Runner) -> List[List[Dict]]:
-    query = src.bigquery.query_user_interactions(shuffle=SHUFFLE)
-    loader = src.bigquery.run_query(client=runner.bq_client, query=query, to_list=False)
+def load_point_ids(runner: src.runner.Runner) -> List[str]:
+    query = src.bigquery.query_user_interactions(
+        n=NUM_ITEMS,
+        index=runner.config.index,
+    )
 
-    return src.bigquery.create_batches(loader, BATCH_SIZE)
+    loader = src.bigquery.run_query(
+        client=runner.bq_client, 
+        query=query, 
+        to_list=False
+    )
+
+    if loader.total_rows == 0:
+        runner.config.index = 0
+        loader = load_point_ids(runner)
+
+    return [row.point_id for row in loader]
 
 
-def get_loader(runner: src.runner.Runner, point_ids: List[str]) -> List[List[Dict]]:
+def get_loader(runner: src.runner.Runner, point_ids: List[str]) -> List[bigquery.table.RowIterator]:
     neighbors = src.pinecone.get_neighbors(
         runner.pinecone_index, 
         point_ids, 
@@ -47,11 +59,14 @@ def get_loader(runner: src.runner.Runner, point_ids: List[str]) -> List[List[Dic
 
 if __name__ == "__main__":
     runner = init_runner()
-    batch_point_ids = load_point_ids(runner)
 
-    for ix, batch in enumerate(batch_point_ids):
-        print(f"Processing batch {ix + 1}/{len(batch_point_ids)}")
-        
-        point_ids = [row.point_id for row in batch]
-        data_loader = get_loader(runner, point_ids)
-        runner.run(data_loader)
+    if src.bigquery.update_job_index(
+        runner.bq_client, 
+        runner.config.id, 
+        runner.config.index + 1
+    ):
+        print(f"Updated job index for {runner.config.id} to {runner.config.index+1}.")
+
+    point_ids = load_point_ids(runner)       
+    data_loader = get_loader(runner, point_ids)
+    runner.run(data_loader)

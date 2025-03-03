@@ -36,9 +36,9 @@ def get_job_index(client: bigquery.Client, job_id: str) -> int:
     USING (SELECT '{job_id}' as job_id) S
     ON T.job_id = S.job_id
     WHEN NOT MATCHED THEN
-        INSERT (job_id, value) VALUES ('{job_id}', 0)
+    INSERT (job_id, value) VALUES ('{job_id}', 0)
     WHEN MATCHED THEN
-        UPDATE SET value = value;
+    UPDATE SET value = value;
     
     SELECT value
     FROM `{PROJECT_ID}.{VINTED_DATASET_ID}.{INDEX_TABLE_ID}`
@@ -114,19 +114,27 @@ def query_pinecone_points(item_ids: List[int]) -> str:
     """
 
 
-def query_user_interactions(shuffle: bool = False) -> str:
+def query_user_interactions(
+    n: Optional[int] = None, 
+    index: Optional[int] = None, 
+    shuffle: bool = False
+) -> str:
     query = f"""
     SELECT DISTINCT p.point_id
     FROM `{PROJECT_ID}.{VINTED_DATASET_ID}.{ITEM_ACTIVE_TABLE_ID}` AS i
     LEFT JOIN (
-    SELECT item_id FROM `{PROJECT_ID}.{PROD_DATASET_ID}.{CLICK_OUT_TABLE_ID}`
+    SELECT DISTINCT item_id FROM `{PROJECT_ID}.{PROD_DATASET_ID}.{CLICK_OUT_TABLE_ID}`
     UNION ALL
-    SELECT item_id FROM `{PROJECT_ID}.{PROD_DATASET_ID}.{SAVED_TABLE_ID}`
+    SELECT DISTINCT item_id FROM `{PROJECT_ID}.{PROD_DATASET_ID}.{SAVED_TABLE_ID}`
+    UNION ALL
+    SELECT DISTINCT id AS item_id FROM `{PROJECT_ID}.{PROD_DATASET_ID}.{VIEWED_ITEMS_TABLE_ID}`
     ) AS interactions ON i.id = interactions.item_id
     INNER JOIN `{PROJECT_ID}.{VINTED_DATASET_ID}.{PINECONE_TABLE_ID}` AS p ON i.id = p.item_id
-    LEFT JOIN `{PROJECT_ID}.{VINTED_DATASET_ID}.{SOLD_TABLE_ID}` AS s USING (vinted_id)
-    WHERE interactions.item_id IS NOT NULL AND s.vinted_id IS NULL
+    WHERE interactions.item_id IS NOT NULL
     """
+
+    if n and index:
+        query += f"\nLIMIT {n} OFFSET {index * n}"
 
     if shuffle:
         query += "\nORDER BY RAND()"
