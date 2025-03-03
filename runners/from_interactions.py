@@ -8,7 +8,7 @@ from google.cloud import bigquery
 import src
 
 
-NUM_ITEMS = 300
+NUM_ITEMS = 200
 NUM_NEIGHBORS = 30
 
 
