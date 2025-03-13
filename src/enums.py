@@ -35,8 +35,8 @@ NOT_FOUND_CONTAINER_CLASS = (
 )
 NOT_FOUND_STATUS_CONTENT = "La page n'existe pas"
 
+VINTAGE_DRESSING_BRAND = "Vintage Dressing"
 TOP_BRANDS = [
-    "Vintage Dressing",
     "Zara",
     "Nike",
     "adidas",

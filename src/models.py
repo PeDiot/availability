@@ -1,7 +1,7 @@
-from typing import List, Dict, Iterator
+from typing import List, Iterator
 from dataclasses import dataclass, field
 from enum import Enum
-
+from random import random
 from pinecone.core.openapi.data.model.scored_vector import ScoredVector
 
 
@@ -14,12 +14,44 @@ class ItemStatus(Enum):
 
 @dataclass
 class JobConfig:
-    id: str
-    index: int
     only_top_brands: bool
+    only_vintage_dressing: bool
     sort_by_likes: bool
     sort_by_date: bool
     from_interactions: bool
+
+    def __post_init__(self):
+        if self.only_vintage_dressing and self.only_top_brands:
+            if random() < 0.5:
+                self.only_vintage_dressing = False
+            else:
+                self.only_top_brands = False
+
+        if self.sort_by_date and self.sort_by_likes:
+            if random() < 0.5:
+                self.sort_by_date = False
+            else:
+                self.sort_by_likes = False
+
+        self._get_id()
+        self.index = -1
+
+    def set_index(self, index: int):
+        self.index = index
+
+    def _get_id(self):
+        if self.from_interactions:
+            self.id = "interactions"
+        elif self.only_top_brands:
+            self.id = "top_brands"
+        elif self.only_vintage_dressing:
+            self.id = "vintage_dressing"
+        elif self.sort_by_likes:
+            self.id = "likes"
+        elif self.sort_by_date:
+            self.id = "date"
+        else:
+            self.id = "all"
 
 
 @dataclass

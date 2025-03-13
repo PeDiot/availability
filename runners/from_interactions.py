@@ -18,9 +18,6 @@ def init_runner() -> src.runner.Runner:
         secrets=secrets,
         use_api=False,
         from_interactions=True,
-        top_brands_alpha=0.0,
-        sort_by_likes_alpha=0.0,
-        sort_by_date_alpha=0.0,
         update_every=NUM_NEIGHBORS,
     )
 

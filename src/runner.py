@@ -21,6 +21,7 @@ class Runner:
         use_api: bool,
         from_interactions: bool,
         top_brands_alpha: Optional[float] = 0.0,
+        vintage_dressing_alpha: Optional[float] = 0.0,
         sort_by_likes_alpha: Optional[float] = 0.0,
         sort_by_date_alpha: Optional[float] = 0.0,
         domain: str = DOMAIN,
@@ -32,6 +33,7 @@ class Runner:
 
         self.from_interactions = from_interactions
         self.top_brands_alpha = top_brands_alpha
+        self.vintage_dressing_alpha = vintage_dressing_alpha
         self.sort_by_likes_alpha = sort_by_likes_alpha
         self.sort_by_date_alpha = sort_by_date_alpha
 
@@ -210,27 +212,18 @@ class Runner:
 
     def _init_config(self):
         only_top_brands = random.random() < self.top_brands_alpha
+        only_vintage_dressing = random.random() < self.vintage_dressing_alpha
         sort_by_likes = random.random() < self.sort_by_likes_alpha
         sort_by_date = random.random() < self.sort_by_date_alpha
 
-        if self.from_interactions:
-            job_id = "interactions"
-        elif only_top_brands:
-            job_id = "top_brands"
-        elif sort_by_likes:
-            job_id = "likes"
-        elif sort_by_date:
-            job_id = "date"
-        else:
-            job_id = "all"
-
-        index = src.bigquery.get_job_index(self.bq_client, job_id)
-
-        self.config = src.models.JobConfig(
-            id=job_id,
-            index=index,
+        config = src.models.JobConfig(
             only_top_brands=only_top_brands,
+            only_vintage_dressing=only_vintage_dressing,
             sort_by_likes=sort_by_likes,
             sort_by_date=sort_by_date,
             from_interactions=self.from_interactions,
         )
+
+        index = src.bigquery.get_job_index(self.bq_client, config.id)
+        config.set_index(index)
+        self.config = config

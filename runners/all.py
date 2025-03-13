@@ -1,6 +1,6 @@
 import sys
 
-sys.path.append("/app")
+sys.path.append("../")
 
 from google.cloud import bigquery
 import json, os
@@ -9,7 +9,8 @@ import src
 
 
 NUM_ITEMS = 100000
-TOP_BRANDS_ALPHA = 0.5
+TOP_BRANDS_ALPHA = .5
+VINTAGE_DRESSING_ALPHA = .5
 SORT_BY_LIKES_ALPHA = 0.0
 SORT_BY_DATE_ALPHA = 0.0
 
@@ -22,6 +23,7 @@ def init_runner() -> src.runner.Runner:
         use_api=False,
         from_interactions=False,
         top_brands_alpha=TOP_BRANDS_ALPHA,
+        vintage_dressing_alpha=VINTAGE_DRESSING_ALPHA,
     )
 
 
@@ -31,6 +33,7 @@ def get_loader(
     query_kwargs = {
         "n": NUM_ITEMS,
         "only_top_brands": config.only_top_brands,
+        "only_vintage_dressing": config.only_vintage_dressing,
         "sort_by_date": config.sort_by_date,
         "sort_by_likes": config.sort_by_likes,
     }
