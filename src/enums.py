@@ -36,11 +36,11 @@ NOT_FOUND_CONTAINER_CLASS = (
 NOT_FOUND_STATUS_CONTENT = "La page n'existe pas"
 
 TOP_BRANDS = [
+    "Vintage Dressing",
     "Zara",
     "Nike",
     "adidas",
     "H&M",
-    "Local",
     "Shein",
     "Bershka",
     "Ralph Lauren",
@@ -159,7 +159,6 @@ TOP_BRANDS = [
     "Ellesse",
     "Cartier",
     "Zara Man",
-    "pas de marque",
     "Boutique Parisienne",
     "Noir",
     "Joma",
@@ -184,7 +183,6 @@ TOP_BRANDS = [
     "New Collection",
     "Giacca",
     "Omega",
-    "no brand",
     "COS",
     "s.Oliver",
     "Set",
