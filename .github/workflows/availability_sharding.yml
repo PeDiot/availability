@@ -1,4 +1,4 @@
-name: Wih Sharding
+name: With Sharding
 
 on:
   workflow_dispatch:
