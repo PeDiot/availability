@@ -2,8 +2,6 @@ name: With Sharding
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '*/10 * * * *'
 
 jobs:
   availability-check:
