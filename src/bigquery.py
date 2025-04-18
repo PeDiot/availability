@@ -86,7 +86,7 @@ def query_items(
         raise ValueError("Cannot set both sort_by_date and sort_by_likes to True")
 
     order_by_prefix = " ORDER BY"
-    where_prefix = "\nWHERE"
+    where_prefix = "\nAND"
 
     query = f"""
     SELECT i.id, p.point_id, i.vinted_id, i.url
