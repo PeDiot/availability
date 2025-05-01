@@ -1,0 +1,12 @@
+google-cloud-bigquery==3.27.0
+google-auth==2.37.0
+tqdm==4.67.1
+pinecone-client==5.0.1
+bs4==0.0.2
+certifi==2024.8.30
+charset-normalizer==3.3.2
+dacite==1.8.1
+idna==3.10
+requests==2.32.3
+urllib3==2.2.3
+selenium==4.18.1
