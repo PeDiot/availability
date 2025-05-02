@@ -157,3 +157,30 @@ def query_pinecone_points(item_ids: List[int]) -> str:
     FROM `{PROJECT_ID}.{VINTED_DATASET_ID}.{PINECONE_TABLE_ID}` 
     WHERE item_id IN ({item_ids_str})
     """
+
+
+def query_points_to_delete(lookback_months: int = LOOKBACK_MONTHS_DEFAULT) -> str:
+    return f"""
+    SELECT DISTINCT p.point_id
+    FROM `{PROJECT_ID}.{VINTED_DATASET_ID}.{PINECONE_TABLE_ID}` AS p
+    INNER JOIN `{PROJECT_ID}.{VINTED_DATASET_ID}.{ITEM_ACTIVE_TABLE_ID}` AS i ON p.item_id = i.id
+    WHERE DATE(i.created_at) < DATE_SUB(CURRENT_DATE(), INTERVAL {lookback_months} MONTH);
+    """
+
+
+def delete_points(lookback_months: int = LOOKBACK_MONTHS_DEFAULT) -> bool:
+    return f"""
+    DELETE FROM `{PROJECT_ID}.{VINTED_DATASET_ID}.{PINECONE_TABLE_ID}` p
+    WHERE EXISTS (
+        SELECT 1 
+        FROM `{PROJECT_ID}.{VINTED_DATASET_ID}.{ITEM_TABLE_ID}` i
+        WHERE p.item_id = i.id
+        AND DATE(i.created_at) < DATE_SUB(CURRENT_DATE(), INTERVAL {lookback_months} MONTH)
+    );
+
+    DELETE FROM `{PROJECT_ID}.{VINTED_DATASET_ID}.{ITEM_TABLE_ID}`
+    WHERE DATE(created_at) < DATE_SUB(CURRENT_DATE(), INTERVAL {lookback_months} MONTH);
+
+    DELETE FROM `{PROJECT_ID}.{VINTED_DATASET_ID}.{SOLD_TABLE_ID}`
+    WHERE DATE(updated_at) < DATE_SUB(CURRENT_DATE(), INTERVAL {lookback_months} MONTH);
+    """

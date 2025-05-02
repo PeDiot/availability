@@ -2,6 +2,7 @@ PROJECT_ID = "recove-450509"
 VINTED_DATASET_ID = "vinted"
 PROD_DATASET_ID = "prod"
 
+ITEM_TABLE_ID = "item"
 ITEM_ACTIVE_TABLE_ID = "item_active"
 INDEX_TABLE_ID = "item_active_index"
 SOLD_TABLE_ID = "sold"
@@ -14,6 +15,8 @@ VINTED_ID_FIELD = "vinted_id"
 AVAILABLE_FIELD = "is_available"
 
 PINECONE_INDEX_NAME = "items"
+
+LOOKBACK_MONTHS_DEFAULT = 2
 
 REQUESTS_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
