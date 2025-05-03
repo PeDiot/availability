@@ -39,15 +39,18 @@ def main():
         print(f"Failed: {len(failed)}")
 
     if success_rate > SUCCESS_RATE_THRESHOLD:
-        query = src.bigquery.delete_points(LOOKBACK_DAYS)
+        query = src.bigquery.query_delete_points(LOOKBACK_DAYS)
         success_points = src.bigquery.run_query(bq_client, query, to_list=False)
 
-        query = src.bigquery.delete_items(LOOKBACK_DAYS)
+        query = src.bigquery.query_delete_items(LOOKBACK_DAYS)
         success_items = src.bigquery.run_query(bq_client, query, to_list=False)
+
+        query = src.bigquery.query_delete_sold(LOOKBACK_DAYS)
+        success_sold = src.bigquery.run_query(bq_client, query, to_list=False)
 
         print(f"BigQuery items: {success_items}")
         print(f"BigQuery points: {success_points}")
-
+        print(f"BigQuery sold: {success_sold}")
 
 if __name__ == "__main__":
     main()
