@@ -168,23 +168,27 @@ def query_points_to_delete(lookback_days: int) -> str:
     """
 
 
-def delete_points(lookback_days: int) -> bool:
+def query_delete_points(lookback_days: int) -> bool:
     return f"""
-    DELETE FROM `{PROJECT_ID}.{VINTED_DATASET_ID}.{PINECONE_TABLE_ID}` p
-    WHERE EXISTS (
-        SELECT 1 
-        FROM `{PROJECT_ID}.{VINTED_DATASET_ID}.{ITEM_TABLE_ID}` i
-        WHERE p.item_id = i.id
-        AND DATE(i.created_at) < DATE_SUB(CURRENT_DATE(), INTERVAL {lookback_days} DAY)
-    );
+    CREATE OR REPLACE TABLE `{PROJECT_ID}.{VINTED_DATASET_ID}.{PINECONE_TABLE_ID}` AS
+    SELECT p.*
+    FROM `{PROJECT_ID}.{VINTED_DATASET_ID}.{PINECONE_TABLE_ID}` p
+    INNER JOIN `{PROJECT_ID}.{VINTED_DATASET_ID}.{ITEM_TABLE_ID}` i ON p.item_id = i.id
+    WHERE DATE(i.created_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL {lookback_days} DAY)
     """
 
 
-def delete_items(lookback_days: int) -> bool:
+def query_delete_items(lookback_days: int) -> bool:
     return f"""
     DELETE FROM `{PROJECT_ID}.{VINTED_DATASET_ID}.{ITEM_TABLE_ID}`
     WHERE DATE(created_at) < DATE_SUB(CURRENT_DATE(), INTERVAL {lookback_days} DAY);
+    """
 
-    DELETE FROM `{PROJECT_ID}.{VINTED_DATASET_ID}.{SOLD_TABLE_ID}`
-    WHERE DATE(updated_at) < DATE_SUB(CURRENT_DATE(), INTERVAL {lookback_days} DAY);
+
+def query_delete_sold(lookback_days: int) -> bool:
+    return f"""
+    CREATE OR REPLACE TABLE `{PROJECT_ID}.{VINTED_DATASET_ID}.{SOLD_TABLE_ID}` AS
+    SELECT *
+    FROM `{PROJECT_ID}.{VINTED_DATASET_ID}.{SOLD_TABLE_ID}`
+    WHERE DATE(updated_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL {lookback_days} DAY);
     """
