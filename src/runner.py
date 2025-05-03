@@ -10,7 +10,8 @@ from src.models import RunnerMode, JobConfig
 
 DOMAIN = "fr"
 DRIVER_RESTART_EVERY = 500
-UPDATE_EVERY = 200
+UPDATE_EVERY = 10
+SUCCESS_RATE_THRESHOLD = 0.8
 
 
 class Runner:
@@ -102,7 +103,11 @@ class Runner:
 
             point_ids = [row.point_id for row in loader]
 
-        if src.pinecone.delete_points(self.config.pinecone_index, point_ids):
+        success_rate, failed = src.pinecone.delete_points_from_ids(
+            index=self.config.pinecone_index, ids=point_ids, verbose=False
+        )
+
+        if success_rate > SUCCESS_RATE_THRESHOLD:
             try:
                 rows = [
                     {"vinted_id": vinted_id, "updated_at": current_time}

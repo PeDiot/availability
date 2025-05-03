@@ -1,6 +1,6 @@
 import sys
 
-sys.path.append("/app")
+sys.path.append("../")
 
 from typing import List
 import json, os

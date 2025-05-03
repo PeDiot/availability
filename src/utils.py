@@ -1,10 +1,20 @@
 from typing import Callable, Any
-
+import json
 import time, requests
 from bs4 import BeautifulSoup
 
 from .enums import *
 from .models import ItemStatus
+
+
+def save_json(data: Any, filepath: str) -> bool:
+    try:
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)
+        return True
+    except Exception as e:
+        print(e)
+        return False
 
 
 def retry_with_backoff(func: Callable, *args, **kwargs) -> Any:
