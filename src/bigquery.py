@@ -177,7 +177,11 @@ def delete_points(lookback_days: int) -> bool:
         WHERE p.item_id = i.id
         AND DATE(i.created_at) < DATE_SUB(CURRENT_DATE(), INTERVAL {lookback_days} DAY)
     );
+    """
 
+
+def delete_items(lookback_days: int) -> bool:
+    return f"""
     DELETE FROM `{PROJECT_ID}.{VINTED_DATASET_ID}.{ITEM_TABLE_ID}`
     WHERE DATE(created_at) < DATE_SUB(CURRENT_DATE(), INTERVAL {lookback_days} DAY);
 

@@ -1,4 +1,4 @@
-name: All Items
+name: Availability - All Items
 
 on:
   workflow_dispatch:

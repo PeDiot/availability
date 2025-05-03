@@ -40,9 +40,13 @@ def main():
 
     if success_rate > SUCCESS_RATE_THRESHOLD:
         query = src.bigquery.delete_points(LOOKBACK_DAYS)
-        success = src.bigquery.run_query(bq_client, query, to_list=False)
+        success_points = src.bigquery.run_query(bq_client, query, to_list=False)
 
-        print(f"BigQuery: {success}")
+        query = src.bigquery.delete_items(LOOKBACK_DAYS)
+        success_items = src.bigquery.run_query(bq_client, query, to_list=False)
+
+        print(f"BigQuery items: {success_items}")
+        print(f"BigQuery points: {success_points}")
 
 
 if __name__ == "__main__":

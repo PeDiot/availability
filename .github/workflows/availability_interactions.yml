@@ -1,4 +1,4 @@
-name: User Interaction Items
+name: Availability - User Interactions
 
 on:
   workflow_dispatch:

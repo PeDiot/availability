@@ -1,0 +1,25 @@
+name: Delete
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  run-delete:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: docker build -t delete-runner -f Dockerfile.delete .
+
+      - name: Run delete container
+        env:
+          SECRETS_JSON: ${{ secrets.SECRETS_JSON }}
+        run: docker run --rm delete-runner 

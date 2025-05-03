@@ -1,4 +1,4 @@
-name: With Sharding
+name: Availability - With Sharding
 
 on:
   workflow_dispatch:

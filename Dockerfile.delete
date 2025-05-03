@@ -1,0 +1,17 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Copy only the necessary files
+COPY src/ /app/src/
+COPY runners/delete.py /app/runners/
+
+# Copy requirements and install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Set environment variables
+ENV PYTHONPATH=/app
+
+# Set the entrypoint to run the delete script
+ENTRYPOINT ["python", "runners/delete.py"] 
