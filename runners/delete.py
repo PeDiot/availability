@@ -1,6 +1,6 @@
 import sys
 
-sys.path.append("../")
+sys.path.append("/app")
 
 import json, os, pinecone
 import src
