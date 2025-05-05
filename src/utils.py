@@ -65,6 +65,10 @@ def parse_web_content(raw_content: str) -> ItemStatus:
         if _extract_rate_limit_message(soup):
             return ItemStatus.UNKNOWN
 
+        if _extract_wait_component(soup):
+            time.sleep(MAX_SLEEP_TIME)
+            return ItemStatus.UNKNOWN
+
         if _extract_sold_component(soup):
             return ItemStatus.SOLD
 
@@ -110,5 +114,23 @@ def _extract_rate_limit_message(soup: BeautifulSoup) -> bool:
 
         return False
 
+    except Exception:
+        return False
+
+
+def _extract_wait_component(soup: BeautifulSoup) -> bool:
+    try:
+        wait_header = soup.find(WAIT_HEADER_TYPE, string=WAIT_HEADER_TEXT)
+        if not wait_header:
+            return False
+            
+        verification_text = soup.find("p", string=lambda s: s and WAIT_VERIFICATION_TEXT in s)
+        if not verification_text:
+            return False
+            
+        loading_element = soup.find("div", class_=WAIT_LOADING_CLASS)
+        
+        return True
+        
     except Exception:
         return False

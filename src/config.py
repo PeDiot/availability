@@ -40,12 +40,14 @@ def init_config(
     vintage_dressing_alpha: float = 0.0,
     sort_by_likes_alpha: float = 0.0,
     sort_by_date_alpha: float = 0.0,
+    is_women_alpha: float = 0.0,
     from_interactions: bool = False,
 ) -> JobConfig:
     only_top_brands = random.random() < top_brands_alpha
     only_vintage_dressing = random.random() < vintage_dressing_alpha
     sort_by_likes = random.random() < sort_by_likes_alpha
     sort_by_date = random.random() < sort_by_date_alpha
+    is_women = random.random() < is_women_alpha
 
     return JobConfig(
         bq_client=bq_client,
@@ -57,4 +59,5 @@ def init_config(
         sort_by_likes=sort_by_likes,
         sort_by_date=sort_by_date,
         from_interactions=from_interactions,
+        is_women=is_women,
     )

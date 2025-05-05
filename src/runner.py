@@ -1,4 +1,4 @@
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Optional
 from datetime import datetime
 
 import tqdm
@@ -10,7 +10,7 @@ from src.models import RunnerMode, JobConfig
 
 DOMAIN = "fr"
 DRIVER_RESTART_EVERY = 500
-UPDATE_EVERY = 10
+UPDATE_EVERY = 100
 SUCCESS_RATE_THRESHOLD = 0.8
 
 
@@ -29,12 +29,17 @@ class Runner:
     def run(
         self,
         data_loader: Union[bigquery.table.RowIterator, src.models.PineconeDataLoader],
+        loop: Optional[tqdm.tqdm] = None,
     ) -> None:
         item_ids, vinted_ids, point_ids = [], [], []
         n, n_success, n_available, n_unavailable, n_updated = 0, 0, 0, 0, 0
-        loop = tqdm.tqdm(iterable=data_loader, total=data_loader.total_rows)
 
-        for entry in loop:
+        if loop is None:
+            iterator = tqdm.tqdm(iterable=data_loader, total=data_loader.total_rows)
+        else:
+            iterator = data_loader
+
+        for entry in iterator:
             n += 1
 
             if not isinstance(entry, src.models.PineconeEntry):
@@ -65,7 +70,7 @@ class Runner:
 
                 item_ids, vinted_ids, point_ids = [], [], []
 
-            loop.set_description(
+            info = (
                 f"Processed: {n} | "
                 f"Success: {n_success} | "
                 f"Success rate: {n_success / n:.2f} | "
@@ -73,6 +78,11 @@ class Runner:
                 f"Unavailable: {n_unavailable} | "
                 f"Updated: {n_updated}"
             )
+
+            if loop is not None:
+                loop.set_description(info)
+            else:
+                iterator.set_description(info)
 
     def _check_update(
         self,
@@ -206,8 +216,10 @@ class Runner:
         self.mode = new_mode
 
         if new_mode == "api":
+            print("Switching to API mode")
             self._quit_driver(restart=False)
         else:
+            print("Switching to driver mode")
             self._quit_driver(restart=True)
 
     def _quit_driver(self, restart: bool = False):

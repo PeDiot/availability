@@ -52,5 +52,6 @@ def main():
         print(f"BigQuery points: {success_points}")
         print(f"BigQuery sold: {success_sold}")
 
+
 if __name__ == "__main__":
     main()

@@ -3,14 +3,14 @@ import sys
 sys.path.append("/app")
 
 from typing import List
-import json, os
+import json, os, tqdm
 
 import src
 
 NUM_ITEMS = 1000
 NUM_NEIGHBORS = 50
 SHUFFLE = True
-RUNNER_MODE = "api"
+RUNNER_MODE = "driver"
 
 
 def init_runner() -> src.runner.Runner:
@@ -70,15 +70,14 @@ if __name__ == "__main__":
         index=runner.config.pinecone_index,
         point_ids=point_ids,
     )
-    num_vectors = len(vectors)
+    
+    loop = tqdm.tqdm(iterable=vectors, total=len(vectors))
 
-    for ix, vector in enumerate(vectors):
-        print(f"Processing vector {ix+1}/{num_vectors}")
-
+    for vector in loop:
         data_loader = src.pinecone.get_neighbors(
             index=runner.config.pinecone_index,
             vectors=[vector],
             n=NUM_NEIGHBORS,
         )
 
-        runner.run(data_loader)
+        runner.run(data_loader, loop)

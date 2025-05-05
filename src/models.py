@@ -31,6 +31,7 @@ class JobConfig:
     sort_by_likes: bool
     sort_by_date: bool
     from_interactions: bool
+    is_women: bool
     driver: Optional[WebDriver] = None
 
     def __post_init__(self):
@@ -59,12 +60,16 @@ class JobConfig:
             self.id = "top_brands"
         elif self.only_vintage_dressing:
             self.id = "vintage_dressing"
-        elif self.sort_by_likes:
-            self.id = "likes"
-        elif self.sort_by_date:
-            self.id = "date"
         else:
             self.id = "all"
+
+        if self.sort_by_likes:
+            self.id += "_likes"
+        elif self.sort_by_date:
+            self.id += "_date"
+
+        if self.is_women is not None:
+            self.id += f"_women_{self.is_women}"
 
 
 @dataclass

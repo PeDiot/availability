@@ -76,6 +76,7 @@ def query_items(
     item_ids: Optional[List[str]] = None,
     n: Optional[int] = None,
     index: Optional[int] = None,
+    is_women: Optional[bool] = None,
 ) -> str:
     if only_vintage_dressing and only_top_brands:
         raise ValueError(
@@ -96,10 +97,12 @@ def query_items(
     WHERE s.vinted_id IS NULL
     """
 
+    if is_women is not None:
+        query += f"{where_prefix} women = {is_women}"
+
     if item_ids:
         item_ids_str = ", ".join(f"'{item_id}'" for item_id in item_ids)
         query += f"{where_prefix} id IN ({item_ids_str})"
-        where_prefix = " AND"
 
     if only_top_brands:
         top_brands_str = ", ".join(f'"{brand}"' for brand in TOP_BRANDS)

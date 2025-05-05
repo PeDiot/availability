@@ -10,6 +10,8 @@ import src
 NUM_ITEMS = 100000
 VINTED_DRESSING_ALPHA = 0.3
 TOP_BRANDS_ALPHA = 0.3
+IS_WOMEN_ALPHA = 0.7
+SORT_BY_DATE_ALPHA = 0.5
 RUNNER_MODE = "api"
 
 
@@ -28,6 +30,8 @@ def init_runner() -> src.runner.Runner:
         driver=driver,
         vintage_dressing_alpha=VINTED_DRESSING_ALPHA,
         top_brands_alpha=TOP_BRANDS_ALPHA,
+        is_women_alpha=IS_WOMEN_ALPHA,
+        sort_by_date_alpha=SORT_BY_DATE_ALPHA,
     )
 
     return src.runner.Runner(
@@ -41,6 +45,8 @@ def get_loader(runner: src.runner.Runner) -> List[dict]:
         "n": NUM_ITEMS,
         "only_top_brands": runner.config.only_top_brands,
         "only_vintage_dressing": runner.config.only_vintage_dressing,
+        "is_women": runner.config.is_women,
+        "sort_by_date": runner.config.sort_by_date,
     }
 
     query = src.bigquery.query_items(index=runner.config.index, **query_kwargs)
