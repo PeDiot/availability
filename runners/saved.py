@@ -8,8 +8,8 @@ import json, os
 import src
 
 
-NUM_ITEMS = 1000
-RUNNER_MODE = "driver"
+NUM_ITEMS = 30000
+RUNNER_MODE = "api"
 
 
 def init_runner() -> src.runner.Runner:
