@@ -8,7 +8,7 @@ import json, os
 import src
 
 
-NUM_ITEMS = 30000
+NUM_ITEMS = 1000
 RUNNER_MODE = "api"
 
 
@@ -62,15 +62,15 @@ def get_loader(runner: src.runner.Runner) -> src.models.PineconeDataLoader:
 
 
 if __name__ == "__main__":
-    runner = init_runner()
-    runner.config.index = 0
-    print(f"Config: {runner.config.id} | Index: {runner.config.index}")
+    while True:
+        runner = init_runner()
+        print(f"Config: {runner.config.id} | Index: {runner.config.index}")
 
-    data_loader = get_loader(runner)
+        data_loader = get_loader(runner)
 
-    if src.bigquery.update_job_index(
-        runner.config.bq_client, runner.config.id, runner.config.index + 1
-    ):
-        print(f"Updated job index for {runner.config.id} to {runner.config.index+1}.")
+        if src.bigquery.update_job_index(
+            runner.config.bq_client, runner.config.id, runner.config.index + 1
+        ):
+            print(f"Updated job index for {runner.config.id} to {runner.config.index+1}.")
 
-    runner.run(data_loader)
+        runner.run(data_loader)
