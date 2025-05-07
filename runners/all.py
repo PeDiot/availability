@@ -18,7 +18,7 @@ RUNNER_MODE = "api"
 def init_runner() -> src.runner.Runner:
     secrets = json.loads(os.getenv("SECRETS_JSON"))
 
-    bq_client, pinecone_index, vinted_client, driver = src.config.init_clients(
+    bq_client, pinecone_index, vinted_client, driver, _ = src.config.init_clients(
         secrets=secrets,
         mode=RUNNER_MODE,
     )

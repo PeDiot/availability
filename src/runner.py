@@ -113,6 +113,11 @@ class Runner:
 
             point_ids = [row.point_id for row in loader]
 
+        if self.config.supabase_client:
+            success = src.supabase.set_items_unavailable(
+                self.config.supabase_client, item_ids
+            )
+
         success_rate, failed = src.pinecone.delete_points_from_ids(
             index=self.config.pinecone_index, ids=point_ids, verbose=False
         )
@@ -216,10 +221,8 @@ class Runner:
         self.mode = new_mode
 
         if new_mode == "api":
-            print("Switching to API mode")
             self._quit_driver(restart=False)
         else:
-            print("Switching to driver mode")
             self._quit_driver(restart=True)
 
     def _quit_driver(self, restart: bool = False):

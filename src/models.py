@@ -5,6 +5,7 @@ from enum import Enum
 from random import random
 from google.cloud import bigquery
 from pinecone import Pinecone, ScoredVector
+from supabase import Client
 from selenium.webdriver.chrome.webdriver import WebDriver
 
 from .bigquery import get_job_index
@@ -31,8 +32,10 @@ class JobConfig:
     sort_by_likes: bool
     sort_by_date: bool
     from_interactions: bool
+    from_saved: bool
     is_women: bool
     driver: Optional[WebDriver] = None
+    supabase_client: Optional[Client] = None
 
     def __post_init__(self):
         if self.only_vintage_dressing and self.only_top_brands:
@@ -60,6 +63,8 @@ class JobConfig:
             self.id = "top_brands"
         elif self.only_vintage_dressing:
             self.id = "vintage_dressing"
+        elif self.from_saved:
+            self.id = "saved"
         else:
             self.id = "all"
 

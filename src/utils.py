@@ -123,14 +123,16 @@ def _extract_wait_component(soup: BeautifulSoup) -> bool:
         wait_header = soup.find(WAIT_HEADER_TYPE, string=WAIT_HEADER_TEXT)
         if not wait_header:
             return False
-            
-        verification_text = soup.find("p", string=lambda s: s and WAIT_VERIFICATION_TEXT in s)
+
+        verification_text = soup.find(
+            "p", string=lambda s: s and WAIT_VERIFICATION_TEXT in s
+        )
         if not verification_text:
             return False
-            
+
         loading_element = soup.find("div", class_=WAIT_LOADING_CLASS)
-        
+
         return True
-        
+
     except Exception:
         return False

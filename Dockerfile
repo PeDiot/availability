@@ -47,5 +47,6 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 ENV FROM_INTERACTIONS=false
-ENTRYPOINT ["sh", "-c", "python3 runners/$([ \"$FROM_INTERACTIONS\" = true ] && echo 'from_interactions.py' || echo 'all.py')"]
+ENV SAVED=false
+ENTRYPOINT ["sh", "-c", "python3 runners/$([ \"$SAVED\" = true ] && echo 'saved.py' || ([ \"$FROM_INTERACTIONS\" = true ] && echo 'from_interactions.py' || echo 'all.py'))"]
 CMD []

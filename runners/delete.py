@@ -14,11 +14,9 @@ PINECONE_ID_FIELD = "point_id"
 def main():
     secrets = json.loads(os.getenv("SECRETS_JSON"))
 
-    gcp_credentials = secrets.get("GCP_CREDENTIALS")
-    bq_client = src.bigquery.init_bigquery_client(credentials_dict=gcp_credentials)
-
-    pinecone_client = pinecone.Pinecone(api_key=secrets.get("PINECONE_API_KEY"))
-    pinecone_index = pinecone_client.Index(src.enums.PINECONE_INDEX_NAME)
+    bq_client, pinecone_index, _, _, _ = src.config.init_clients(
+        secrets=secrets,
+    )
 
     query = src.bigquery.query_points_to_delete(LOOKBACK_DAYS)
     iterator = src.bigquery.run_query(bq_client, query, to_list=False)

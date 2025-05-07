@@ -11,6 +11,8 @@ CLICK_OUT_TABLE_ID = "click_out"
 SAVED_TABLE_ID = "saved"
 VIEWED_ITEMS_TABLE_ID = "items"
 
+SUPABASE_SAVED_TABLE_ID = "saved_item"
+
 VINTED_ID_FIELD = "vinted_id"
 AVAILABLE_FIELD = "is_available"
 

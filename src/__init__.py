@@ -8,6 +8,7 @@ from . import (
     runner,
     config,
     utils,
+    supabase,
 )
 
 
@@ -21,4 +22,5 @@ __all__ = [
     "runner",
     "config",
     "utils",
+    "supabase",
 ]

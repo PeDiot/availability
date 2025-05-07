@@ -16,7 +16,7 @@ RUNNER_MODE = "driver"
 def init_runner() -> src.runner.Runner:
     secrets = json.loads(os.getenv("SECRETS_JSON"))
 
-    bq_client, pinecone_index, vinted_client, driver = src.config.init_clients(
+    bq_client, pinecone_index, vinted_client, driver, _ = src.config.init_clients(
         secrets=secrets,
         mode=RUNNER_MODE,
     )
@@ -70,7 +70,7 @@ if __name__ == "__main__":
         index=runner.config.pinecone_index,
         point_ids=point_ids,
     )
-    
+
     loop = tqdm.tqdm(iterable=vectors, total=len(vectors))
 
     for vector in loop:
