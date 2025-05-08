@@ -2,7 +2,6 @@ import sys
 
 sys.path.append("/app")
 
-from typing import List
 import json, os
 
 import src
@@ -10,23 +9,10 @@ import src
 
 NUM_ITEMS = 1000
 RUNNER_MODE = "api"
+JOB_ID = "saved"
 
 
-def init_runner(index: int) -> src.runner.Runner:
-    secrets = json.loads(os.getenv("SECRETS_JSON"))
-
-    (
-        bq_client,
-        pinecone_index,
-        vinted_client,
-        driver,
-        supabase_client,
-    ) = src.config.init_clients(
-        secrets=secrets,
-        mode=RUNNER_MODE,
-        with_supabase=True,
-    )
-
+def init_runner() -> src.runner.Runner:
     config = src.config.init_config(
         bq_client=bq_client,
         supabase_client=supabase_client,
@@ -34,7 +20,6 @@ def init_runner(index: int) -> src.runner.Runner:
         vinted_client=vinted_client,
         driver=driver,
         from_saved=True,
-        index=index,
     )
 
     return src.runner.Runner(
@@ -63,10 +48,25 @@ def get_loader(runner: src.runner.Runner) -> src.models.PineconeDataLoader:
 
 
 if __name__ == "__main__":
-    index = 0 
+    secrets = json.loads(os.getenv("SECRETS_JSON"))
+    global bq_client, pinecone_index, vinted_client, driver, supabase_client
 
-    while True:
-        runner = init_runner(index)
+    (
+        bq_client,
+        pinecone_index,
+        vinted_client,
+        driver,
+        supabase_client,
+    ) = src.config.init_clients(
+        secrets=secrets,
+        mode=RUNNER_MODE,
+        with_supabase=True,
+    )
+
+    runner = init_runner()
+    index = runner.config.index
+
+    while True:        
         print(f"Config: {runner.config.id} | Index: {runner.config.index}")
 
         data_loader = get_loader(runner)
@@ -75,4 +75,10 @@ if __name__ == "__main__":
             raise Exception("No entries found")
         
         runner.run(data_loader)
-        index += 1
+        runner.config.set_index(index+1)
+        
+        src.bigquery.update_job_index(
+            client=bq_client,
+            job_id=JOB_ID,
+            index=runner.config.index,
+        )

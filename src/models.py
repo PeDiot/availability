@@ -75,8 +75,9 @@ class JobConfig:
         elif self.sort_by_date:
             self.id += "_date"
 
-        if self.is_women is not None:
-            self.id += f"_women_{self.is_women}"
+        if not self.from_saved: 
+            if self.is_women is not None:
+                self.id += f"_women_{self.is_women}"
 
 
 @dataclass

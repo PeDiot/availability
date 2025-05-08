@@ -59,7 +59,6 @@ def init_config(
     is_women_alpha: float = 0.0,
     from_interactions: bool = False,
     from_saved: bool = False,
-    index: Optional[int] = None,
 ) -> JobConfig:
     if from_saved:
         if not supabase_client:
@@ -89,6 +88,6 @@ def init_config(
         is_women=is_women,
     )
 
-    config.set_index(index)
+    config.set_index()
 
     return config
