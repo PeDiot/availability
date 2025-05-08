@@ -12,7 +12,7 @@ NUM_ITEMS = 1000
 RUNNER_MODE = "api"
 
 
-def init_runner() -> src.runner.Runner:
+def init_runner(index: int) -> src.runner.Runner:
     secrets = json.loads(os.getenv("SECRETS_JSON"))
 
     (
@@ -34,6 +34,7 @@ def init_runner() -> src.runner.Runner:
         vinted_client=vinted_client,
         driver=driver,
         from_saved=True,
+        index=index,
     )
 
     return src.runner.Runner(
@@ -62,15 +63,16 @@ def get_loader(runner: src.runner.Runner) -> src.models.PineconeDataLoader:
 
 
 if __name__ == "__main__":
+    index = 0 
+
     while True:
-        runner = init_runner()
+        runner = init_runner(index)
         print(f"Config: {runner.config.id} | Index: {runner.config.index}")
 
         data_loader = get_loader(runner)
 
-        if src.bigquery.update_job_index(
-            runner.config.bq_client, runner.config.id, runner.config.index + 1
-        ):
-            print(f"Updated job index for {runner.config.id} to {runner.config.index+1}.")
-
+        if len(data_loader.entries) == 0:
+            raise Exception("No entries found")
+        
         runner.run(data_loader)
+        index += 1

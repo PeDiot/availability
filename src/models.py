@@ -51,10 +51,12 @@ class JobConfig:
                 self.sort_by_likes = False
 
         self._get_id()
-        self.set_index()
 
-    def set_index(self):
-        self.index = get_job_index(self.bq_client, self.id)
+    def set_index(self, index: Optional[int] = None):
+        if index is None:
+            self.index = get_job_index(self.bq_client, self.id)
+        else:
+            self.index = index
 
     def _get_id(self):
         if self.from_interactions:
