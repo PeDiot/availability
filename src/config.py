@@ -74,7 +74,7 @@ def init_config(
     sort_by_date = random.random() < sort_by_date_alpha
     is_women = random.random() < is_women_alpha
 
-    return JobConfig(
+    config = JobConfig(
         bq_client=bq_client,
         supabase_client=supabase_client,
         pinecone_index=pinecone_index,
@@ -87,5 +87,8 @@ def init_config(
         from_interactions=from_interactions,
         from_saved=from_saved,
         is_women=is_women,
-        index=index,
     )
+
+    config.set_index(index)
+
+    return config
