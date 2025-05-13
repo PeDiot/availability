@@ -157,7 +157,11 @@ class Runner:
         int,
         int,
     ]:
-        status = self._get_status(entry)
+        try:
+            status = self._get_status(entry)
+        except Exception as e:
+            status = src.models.ItemStatus.UNKNOWN
+
         is_available = src.status.is_available(status)
         success = status != src.models.ItemStatus.UNKNOWN
 
