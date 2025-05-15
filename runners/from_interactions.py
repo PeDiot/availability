@@ -7,6 +7,7 @@ import json, os, tqdm
 
 import src
 
+
 NUM_ITEMS = 1000
 NUM_NEIGHBORS = 50
 SHUFFLE = True
