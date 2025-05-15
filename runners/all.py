@@ -2,11 +2,13 @@ import sys
 
 sys.path.append("/app")
 
-from typing import List
+from typing import List, Dict, Union
 import json, os
 
 import src
 
+
+FROM_PINECONE = False
 NUM_ITEMS = 100000
 VINTED_DRESSING_ALPHA = 0.3
 TOP_BRANDS_ALPHA = 0.3
@@ -40,7 +42,15 @@ def init_runner() -> src.runner.Runner:
     )
 
 
-def get_loader(runner: src.runner.Runner) -> List[dict]:
+def get_loader(
+    runner: src.runner.Runner, 
+    from_pinecone: bool = False
+) -> Union[List[Dict], src.models.PineconeDataLoader]:
+    if from_pinecone:
+        return src.pinecone.list_points(
+            index=runner.config.pinecone_index, n=NUM_ITEMS,
+        )
+
     query_kwargs = {
         "n": NUM_ITEMS,
         "only_top_brands": runner.config.only_top_brands,
@@ -69,7 +79,7 @@ if __name__ == "__main__":
     runner = init_runner()
     print(f"Config: {runner.config.id} | Index: {runner.config.index}")
 
-    data_loader = get_loader(runner)
+    data_loader = get_loader(runner, from_pinecone=FROM_PINECONE)
 
     if src.bigquery.update_job_index(
         runner.config.bq_client, runner.config.id, runner.config.index + 1
