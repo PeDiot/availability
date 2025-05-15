@@ -102,24 +102,21 @@ def get_vectors(index: Index, point_ids: List[str]) -> List[ScoredVector]:
     return response.vectors.values()
 
 
-def get_neighbors(
-    index: Index, vectors: List[ScoredVector], n: int
-) -> PineconeDataLoader:
+def get_neighbors(index: Index, point_id: str, n: int) -> PineconeDataLoader:
     loader = PineconeDataLoader()
 
-    for vector in vectors:
-        results = index.query(
-            vector=vector.values,
-            top_k=n,
-            include_values=False,
-            include_metadata=True,
-        )
+    results = index.query(
+        id=point_id,
+        top_k=n,
+        include_values=False,
+        include_metadata=True,
+    )
 
-        for vector in results.matches:
-            try:
-                entry = PineconeEntry.from_vector(vector)
-                loader.add(entry)
-            except:
-                pass
+    for vector in results.matches:
+        try:
+            entry = PineconeEntry.from_vector(vector)
+            loader.add(entry)
+        except:
+            pass
 
     return loader

@@ -10,7 +10,7 @@ import src
 NUM_ITEMS = 1000
 NUM_NEIGHBORS = 50
 SHUFFLE = True
-RUNNER_MODE = "driver"
+RUNNER_MODE = "api"
 
 
 def init_runner() -> src.runner.Runner:
@@ -66,17 +66,12 @@ if __name__ == "__main__":
         print(f"Updated job index for {runner.config.id} to {runner.config.index+1}.")
 
     point_ids = load_point_ids(runner)
-    vectors = src.pinecone.get_vectors(
-        index=runner.config.pinecone_index,
-        point_ids=point_ids,
-    )
+    loop = tqdm.tqdm(iterable=point_ids, total=len(point_ids))
 
-    loop = tqdm.tqdm(iterable=vectors, total=len(vectors))
-
-    for vector in loop:
+    for point_id in loop:
         data_loader = src.pinecone.get_neighbors(
             index=runner.config.pinecone_index,
-            vectors=[vector],
+            point_id=point_id,
             n=NUM_NEIGHBORS,
         )
 

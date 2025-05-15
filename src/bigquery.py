@@ -129,15 +129,12 @@ def query_interaction_items(
 ) -> str:
     query = f"""
     SELECT DISTINCT p.point_id
-    FROM `{PROJECT_ID}.{VINTED_DATASET_ID}.{ITEM_ACTIVE_TABLE_ID}` AS i
-    LEFT JOIN (
+    FROM (
     SELECT DISTINCT item_id FROM `{PROJECT_ID}.{PROD_DATASET_ID}.{CLICK_OUT_TABLE_ID}`
     UNION ALL
     SELECT DISTINCT item_id FROM `{PROJECT_ID}.{PROD_DATASET_ID}.{SAVED_TABLE_ID}`
-    ) AS interactions ON i.id = interactions.item_id
-    INNER JOIN `{PROJECT_ID}.{VINTED_DATASET_ID}.{PINECONE_TABLE_ID}` AS p ON i.id = p.item_id
-    LEFT JOIN `{PROJECT_ID}.{VINTED_DATASET_ID}.{SOLD_TABLE_ID}` AS s USING (vinted_id)
-    WHERE s.vinted_id IS NULL AND interactions.item_id IS NOT NULL
+    ) AS interactions
+    INNER JOIN `{PROJECT_ID}.{VINTED_DATASET_ID}.{PINECONE_TABLE_ID}` AS p USING (item_id)
     """
 
     if shuffle:
