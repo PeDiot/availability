@@ -75,9 +75,11 @@ class JobConfig:
         elif self.sort_by_date:
             self.id += "_date"
 
-        if not self.from_saved: 
+        if not self.from_saved:
             if self.is_women is not None:
                 self.id += f"_women_{self.is_women}"
+
+        self.id = self.id.lower()
 
 
 @dataclass
@@ -118,6 +120,9 @@ class PineconeDataLoader:
 
     def __len__(self) -> int:
         return len(self.entries)
+
+    def __getitem__(self, index: int) -> PineconeEntry:
+        return self.entries[index]
 
     @property
     def total_rows(self) -> int:
