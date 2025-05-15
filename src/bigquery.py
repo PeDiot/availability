@@ -124,6 +124,26 @@ def query_items(
     return query
 
 
+def query_vector_ids(
+    n: Optional[int] = None, index: Optional[int] = None, shuffle: bool = False
+) -> str:
+    query = f"""
+    SELECT DISTINCT point_id
+    FROM `{PROJECT_ID}.{VINTED_DATASET_ID}.{PINECONE_TABLE_ID}`
+    """
+
+    if shuffle and index is None:
+        query += "\nORDER BY RAND()"
+
+    if n:
+        query += f"\nLIMIT {n}"
+
+        if index:
+            query += f"\nOFFSET {index * n}"
+
+    return query
+
+
 def query_interaction_items(
     n: Optional[int] = None, index: Optional[int] = None, shuffle: bool = False
 ) -> str:
