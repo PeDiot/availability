@@ -1,14 +1,14 @@
 import sys
 
-sys.path.append("/app")
+sys.path.append("../")
 
-from typing import List, Dict, Union
-import json, os
+from typing import List, Dict
+import json, os, random
 
 import src
 
 
-FROM_PINECONE = False
+FROM_PINECONE_ALPHA = 0.5
 NUM_ITEMS = 100000
 VINTED_DRESSING_ALPHA = 0.3
 TOP_BRANDS_ALPHA = 0.3
@@ -42,15 +42,13 @@ def init_runner() -> src.runner.Runner:
     )
 
 
-def get_loader(
-    runner: src.runner.Runner, 
-    from_pinecone: bool = False
-) -> Union[List[Dict], src.models.PineconeDataLoader]:
-    if from_pinecone:
-        return src.pinecone.list_points(
-            index=runner.config.pinecone_index, n=NUM_ITEMS,
-        )
+def from_pinecone() -> bool:
+    return random.random() < FROM_PINECONE_ALPHA
 
+
+def get_loader(
+    runner: src.runner.Runner,
+) -> List[Dict]:
     query_kwargs = {
         "n": NUM_ITEMS,
         "only_top_brands": runner.config.only_top_brands,
@@ -75,15 +73,41 @@ def get_loader(
     return loader
 
 
+def get_loader_from_pinecone(
+    runner: src.runner.Runner
+) -> src.models.PineconeDataLoader:
+    query = src.bigquery.query_vector_ids(
+        n=src.pinecone.BATCH_SIZE, index=runner.config.index, shuffle=True
+    )
+
+    response = src.bigquery.run_query(
+        client=runner.config.bq_client, query=query, to_list=False
+    )
+
+    point_ids = [row["point_id"] for row in response]
+
+    return src.pinecone.fetch_vectors(
+        index=runner.config.pinecone_index, point_ids=point_ids
+    )
+
+
 if __name__ == "__main__":
     runner = init_runner()
     print(f"Config: {runner.config.id} | Index: {runner.config.index}")
 
-    data_loader = get_loader(runner, from_pinecone=FROM_PINECONE)
+    if from_pinecone():
+        while True:
+            data_loader = get_loader_from_pinecone(runner)
+            runner.run(data_loader)
 
-    if src.bigquery.update_job_index(
-        runner.config.bq_client, runner.config.id, runner.config.index + 1
-    ):
-        print(f"Updated job index for {runner.config.id} to {runner.config.index+1}.")
+    else:
+        data_loader = get_loader(runner)
 
-    runner.run(data_loader)
+        if src.bigquery.update_job_index(
+            runner.config.bq_client, runner.config.id, runner.config.index + 1
+        ):
+            print(
+                f"Updated job index for {runner.config.id} to {runner.config.index+1}."
+            )
+
+        runner.run(data_loader)
