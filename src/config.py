@@ -52,7 +52,7 @@ def init_config(
     vinted_client: Vinted,
     driver: Optional[WebDriver] = None,
     supabase_client: Optional[Client] = None,
-    top_brands_alpha: float = 0.5,
+    top_brands_alpha: float = 0.,
     vintage_dressing_alpha: float = 0.0,
     sort_by_likes_alpha: float = 0.0,
     sort_by_date_alpha: float = 0.0,
