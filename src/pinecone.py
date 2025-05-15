@@ -9,7 +9,34 @@ from .models import PineconeEntry, PineconeDataLoader
 
 
 BATCH_SIZE = 1000
+MAX_LIMIT = 100
 SLEEP_TIME = 30
+
+
+def list_points(
+    index: Index, n: int,
+) -> PineconeDataLoader:
+    ix, pagination_token = 0, None
+    entries = []
+
+    with tqdm(total=n, desc="Fetching vectors") as pbar:
+        while ix < n:
+            results = index.list_paginated(
+                limit=MAX_LIMIT, pagination_token=pagination_token
+            )
+
+            pagination_token = results.get("pagination", {}).get("next")
+
+            for vector in results.get("vectors", []):
+                entry = PineconeEntry.from_dict(vector)
+                entries.append(entry)
+                ix += 1
+                pbar.update(1)
+
+                if ix >= n:
+                    return PineconeDataLoader(entries)
+
+    return PineconeDataLoader(entries)
 
 
 def delete_points_from_ids(
