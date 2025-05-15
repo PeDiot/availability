@@ -14,10 +14,11 @@ SLEEP_TIME = 30
 
 
 def list_points(
-    index: Index, n: int,
+    index: Index,
+    n: int,
 ) -> PineconeDataLoader:
     ix, pagination_token = 0, None
-    entries = []
+    loader = PineconeDataLoader()
 
     with tqdm(total=n, desc="Fetching vectors") as pbar:
         while ix < n:
@@ -29,14 +30,28 @@ def list_points(
 
             for vector in results.get("vectors", []):
                 entry = PineconeEntry.from_dict(vector)
-                entries.append(entry)
+                loader.add(entry)
                 ix += 1
                 pbar.update(1)
 
                 if ix >= n:
-                    return PineconeDataLoader(entries)
+                    return loader
 
-    return PineconeDataLoader(entries)
+    return loader
+
+
+def fetch_vectors(index: Index, point_ids: List[str]) -> PineconeDataLoader:
+    response = index.fetch(ids=point_ids)
+    loader = PineconeDataLoader()
+
+    for vector in response.vectors.values():
+        try:
+            entry = PineconeEntry.from_vector(vector)
+            loader.add(entry)
+        except:
+            pass
+
+    return loader
 
 
 def delete_points_from_ids(
@@ -121,12 +136,6 @@ def delete_points_from_bigquery_iterator(
                 )
 
     return success_rate, failed
-
-
-def get_vectors(index: Index, point_ids: List[str]) -> List[ScoredVector]:
-    response = index.fetch(ids=point_ids)
-
-    return response.vectors.values()
 
 
 def get_neighbors(index: Index, point_id: str, n: int) -> PineconeDataLoader:
