@@ -66,17 +66,17 @@ if __name__ == "__main__":
     runner = init_runner()
     index = runner.config.index
 
-    while True:        
+    while True:
         print(f"Config: {runner.config.id} | Index: {runner.config.index}")
 
         data_loader = get_loader(runner)
 
         if len(data_loader.entries) == 0:
             raise Exception("No entries found")
-        
+
         runner.run(data_loader)
-        runner.config.set_index(index+1)
-        
+        runner.config.set_index(index + 1)
+
         src.bigquery.update_job_index(
             client=bq_client,
             job_id=JOB_ID,
