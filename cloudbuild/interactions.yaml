@@ -20,7 +20,7 @@ steps:
       - '4Gi'
       - '--cpu'
       - '2'
-      - '--timeout'
+      - '--task-timeout'
       - '3600s'
       - '--set-env-vars'
       - 'FROM_INTERACTIONS=true'
@@ -48,7 +48,7 @@ steps:
       - '--oauth-token-scope'
       - 'https://www.googleapis.com/auth/cloud-platform'
       - '--location'
-      - 'europe-west9'
+      - 'europe-west1'
 
 images:
   - 'gcr.io/$PROJECT_ID/availability-interactions:latest' 
