@@ -1,0 +1,54 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/availability-interactions:latest', '.']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/availability-interactions:latest']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'jobs'
+      - 'deploy'
+      - 'availability-interactions'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/availability-interactions:latest'
+      - '--region'
+      - 'europe-west9'
+      - '--memory'
+      - '4Gi'
+      - '--cpu'
+      - '2'
+      - '--timeout'
+      - '3600s'
+      - '--set-env-vars'
+      - 'FROM_INTERACTIONS=true'
+      - '--set-secrets'
+      - 'SECRETS_JSON=availability-secrets:latest'
+      - '--max-retries'
+      - '1'
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'scheduler'
+      - 'jobs'
+      - 'create'
+      - 'http'
+      - 'availability-interactions-scheduler'
+      - '--schedule'
+      - '0 */3 * * *'
+      - '--uri'
+      - 'https://europe-west9-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/$PROJECT_ID/jobs/availability-interactions:run'
+      - '--http-method'
+      - 'POST'
+      - '--oauth-service-account-email'
+      - '$PROJECT_NUMBER-compute@developer.gserviceaccount.com'
+      - '--oauth-token-scope'
+      - 'https://www.googleapis.com/auth/cloud-platform'
+      - '--location'
+      - 'europe-west9'
+
+images:
+  - 'gcr.io/$PROJECT_ID/availability-interactions:latest' 
